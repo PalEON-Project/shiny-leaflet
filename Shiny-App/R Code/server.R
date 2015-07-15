@@ -9,8 +9,6 @@ require(reshape) # reshape2?
 require(ggplot2)
 require(gridExtra)
 require(maptools)
-#JP can't get gpclib for windows.  I don't think I need it, but check out this site if you really need it: http://tlocoh.r-forge.r-project.org/manual_install.html
-#require(gpclib)
 require(sp)
 require(rgdal)
 require(fields)
@@ -23,7 +21,9 @@ source("set_domain.R")
 
 library(maptools)
 
-#Alex Shapefile Code
+####################################################################################################################################
+#We couldn't get the US Albers shapefile to show up when running the Shiny App.
+#But we had the code below from Alex Dye for viewing Canada that he used when playing around with Shiny that we could make work 
 library(maptools)
 
 shinyServer(function(input,output){
@@ -37,24 +37,25 @@ shinyServer(function(input,output){
   })
 })
 
-#source("C:/Users/jmurray7/Desktop/Shiny/Shiny/plot.R")
-#source("C:/Users/jmurray7/Desktop/Shiny/Shiny/set_domain.R")
 
+
+###################################################################################################################################
+#Code for making composition maps
 #Chris Shapefile Code
 ##fileInput('inputdata','Input shapefile',accept=c('.shp','.dbf','.shx',".prj"), multiple=TRUE)
 ##plotOutput("SHPplot")
 
 #load US Shapefile which was obtained from wiki page: https://paleon.geography.wisc.edu/doku.php/public_data;rasters
 #usShp <-readShapeLines(("us_alb.shp"), proj4string=CRS('+init=epsg:3175'))
-###usShp <- readShapeLines(("C:/Users/jmurray7/Desktop/Shiny/Shiny/us_alb.shp"), proj4string=CRS('+init=epsg:3175'))
+###usShp <- readShapeLines(("C:/Dropbox/Shiny/Shiny-App/Data/us_alb.shp"), proj4string=CRS('+init=epsg:3175'))
 #usShp@data$id <- rownames(usShp@data)
 #usFortified <- fortify(usShp, region='id')
 
 region = t(as.matrix(raster("paleonDomain.tif")))
 water = t(as.matrix(raster("water.tif")))
 
-#region = t(as.matrix(raster("C:/Users/jmurray7/Desktop/Shiny/Shiny/paleonDomain.tif")))
-#water = t(as.matrix(raster("C:/Users/jmurray7/Desktop/Shiny/Shiny/water.tif")))
+#region = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/paleonDomain.tif")))
+#water = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/water.tif")))
 ## t()  manipulates matrix so plots correctly W-E and N-S in R
 
 ## region[region %in% c(2,3,5,6,11,12)] <- NA
@@ -64,26 +65,9 @@ maskWater = is.na(water)
 
 ## western data/results
 
-#westernData and easternData.Rda have raw data in them and Chris uses when he wants to plot the raw data
-#but since we only want to plot the model predictions, then Chris says we can omit this.
-#westerData and easternData.Rda are produced by build_eastern.R and build_western.R
-#load(file.path(dataDir, 'westernData.Rda'))
+finalNcdfName <- paste0('PLScomposition_western_0.3.nc')
 
-#rawWest <- matrix(0, nrow = nCells, ncol = nTaxa)
-#for(p in 1:nTaxa) {
-#  tbl <- table(data$cell[data$taxon == p])
-#  rawWest[as.numeric(names(tbl)) , p] <- tbl
-#}
-#total <- rowSums(rawWest)
-#rawWest[total == 0] = NA
-#total[total == 0] <- 1
-#rawWest <- rawWest / total
-#dimnames(rawWest)[[2]] <- gsub("/", "ZZZ", taxa$taxonName)  # otherwise both / and " " become "." so can't distinguish when I substitute back in for "."
-
-finalNcdfName <- paste0('PLScomposition_western_0.2-release.nc')
-
-ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny-App/PLScomposition_western_0.2-release.nc")
-#ncdfPtr <- nc_open("C:/Users/jmurray7/Desktop/Shiny/Shiny/PLScomposition_western_0.2-release.nc")
+ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny-App/Data/composition_midwest_0.3.nc")
 
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
@@ -91,16 +75,6 @@ taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the we
 nCells <- ncdfPtr$dim[[1]]$len * ncdfPtr$dim[[2]]$len
 nTaxa <- ncdfPtr$nvars
 nSamples <- ncdfPtr$dim[[3]]$len
-
-#Chris said this code was not necessary given the 3 lines of code above.  But it seems like a nice test to include
-#test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
-
-#With the additional code from Chris above (lines 79-81), Christ said the following 3 lines aren't needed
-#nSamples <- dim(test)[3]
-
-#if(nCells != prod(dim(test)[1:2]))
-#  stop("nCells does not match first dimension of netCDF file.")
-
 
 preds <- array(0, c(nCells, nTaxa, nSamples))
 #dimnames(preds)[[2]] <- rep("name",19)# taxa$taxonName
@@ -115,15 +89,11 @@ pmWest <- apply(preds, c(1, 2), 'mean')
 psdWest <- apply(preds, c(1, 2), 'sd')
 
 
-
 # eastern data/results
-#See note above about the westernData.Rda - the same applies for the easternData.Rda and I assume the intersection.Rda
-#load(file.path(dataDir, 'easternData.Rda'))
-#load(file.path(dataDir, 'intersection.Rda'))
 
-finalNcdfName <- paste0('PLScomposition_eastern_0.2-release.nc')
+finalNcdfName <- paste0('PLScomposition_eastern_0.3.nc')
 
-ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny/PLScomposition_eastern_0.2-release.nc")
+ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny-App/Data/composition_east_0.3.nc")
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
 #additional code from Chris to read from the netcdf file.
@@ -143,6 +113,7 @@ attributes(preds)$dimnames[[2]] <- gsub("/", "ZZZ", taxaNames)
 pmEast <- apply(preds, c(1, 2), 'mean')
 psdEast <- apply(preds, c(1, 2), 'sd')
 
+#attempt to put composition maps in shinyServer code
 shinyServer(
   function(input, output) {
     pmFull <- matrix(NA, c(xRes*yRes), ncol(pmEast))
