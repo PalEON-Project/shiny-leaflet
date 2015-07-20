@@ -5,7 +5,7 @@ rm(list=ls()) #clear workspace
 
 #require(ncdf)
 require(ncdf4)
-require(reshape) # reshape2?
+require(reshape2)
 require(ggplot2)
 require(gridExtra)
 require(maptools)
@@ -16,18 +16,15 @@ require(raster)
 require(maps)
 require(RColorBrewer)
 
-source("plot.R")
-source("set_domain.R")
-
-library(maptools)
+source("R Code/plot.R")
+source("R Code/set_domain.R")
 
 ####################################################################################################################################
 #We couldn't get the US Albers shapefile to show up when running the Shiny App.
 #But we had the code below from Alex Dye for viewing Canada that he used when playing around with Shiny that we could make work 
-library(maptools)
 
 shinyServer(function(input,output){
-  Canada<-readShapeSpatial("Canada.shp")
+  Canada<-readShapeSpatial("Data/Canada.shp")
   #USA<-readShapeSpatial("locMap2.shp")
   
   output$MapPlot<-renderPlot({
@@ -51,8 +48,8 @@ shinyServer(function(input,output){
 #usShp@data$id <- rownames(usShp@data)
 #usFortified <- fortify(usShp, region='id')
 
-region = t(as.matrix(raster("paleonDomain.tif")))
-water = t(as.matrix(raster("water.tif")))
+region = t(as.matrix(raster("Data/paleonDomain.tif")))
+water = t(as.matrix(raster("Data/water.tif")))
 
 #region = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/paleonDomain.tif")))
 #water = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/water.tif")))
@@ -65,9 +62,9 @@ maskWater = is.na(water)
 
 ## western data/results
 
-finalNcdfName <- paste0('PLScomposition_western_0.3.nc')
+finalNcdfName <- paste0('Data/PLScomposition_western_0.3.nc')
 
-ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny-App/Data/composition_midwest_0.3.nc")
+ncdfPtr <- nc_open("Data/composition_midwest_0.3.nc")
 
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
@@ -93,7 +90,7 @@ psdWest <- apply(preds, c(1, 2), 'sd')
 
 finalNcdfName <- paste0('PLScomposition_eastern_0.3.nc')
 
-ncdfPtr <- nc_open("C:/Dropbox/Shiny/Shiny-App/Data/composition_east_0.3.nc")
+ncdfPtr <- nc_open("Data/composition_east_0.3.nc")
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
 #additional code from Chris to read from the netcdf file.
