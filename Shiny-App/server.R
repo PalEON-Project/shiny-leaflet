@@ -16,15 +16,15 @@ require(raster)
 require(maps)
 require(RColorBrewer)
 
-source("R Code/plot.R")
-source("R Code/set_domain.R")
+source("R/plot.R")
+source("R/set_domain.R")
 
 ####################################################################################################################################
 #We couldn't get the US Albers shapefile to show up when running the Shiny App.
 #But we had the code below from Alex Dye for viewing Canada that he used when playing around with Shiny that we could make work 
 
 shinyServer(function(input,output){
-  Canada<-readShapeSpatial("Data/Canada.shp")
+  Canada<-readShapeSpatial("data/Canada.shp")
   #USA<-readShapeSpatial("locMap2.shp")
   
   output$MapPlot<-renderPlot({
@@ -48,8 +48,8 @@ shinyServer(function(input,output){
 #usShp@data$id <- rownames(usShp@data)
 #usFortified <- fortify(usShp, region='id')
 
-region = t(as.matrix(raster("Data/paleonDomain.tif")))
-water = t(as.matrix(raster("Data/water.tif")))
+region = t(as.matrix(raster("data/paleonDomain.tif")))
+water = t(as.matrix(raster("data/water.tif")))
 
 #region = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/paleonDomain.tif")))
 #water = t(as.matrix(raster("C:/Dropbox/Shiny/Shiny-App/Data/water.tif")))
@@ -62,9 +62,9 @@ maskWater = is.na(water)
 
 ## western data/results
 
-finalNcdfName <- paste0('Data/PLScomposition_western_0.3.nc')
+finalNcdfName <- paste0('data/PLScomposition_western_0.3.nc')
 
-ncdfPtr <- nc_open("Data/composition_midwest_0.3.nc")
+ncdfPtr <- nc_open("data/composition_midwest_0.3.nc")
 
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
@@ -90,7 +90,7 @@ psdWest <- apply(preds, c(1, 2), 'sd')
 
 finalNcdfName <- paste0('PLScomposition_eastern_0.3.nc')
 
-ncdfPtr <- nc_open("Data/composition_east_0.3.nc")
+ncdfPtr <- nc_open("data/composition_east_0.3.nc")
 taxaNames <- names(ncdfPtr$var)#use this so I dont' have to refer back to the western/easterData.Rda files to get the taxa variable
 
 #additional code from Chris to read from the netcdf file.
