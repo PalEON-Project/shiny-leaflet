@@ -19,11 +19,11 @@ shinyServer(function(input,output){
     
     mean_plot <- ggplot(dataset(), aes(x = x, y = y, fill = means)) + 
       geom_tile() +
-      scale_fill_continuous(na.value = NA) +
+      scale_fill_gradient2(na.value = NA, low = '#ffebaf', mid = '#98e600', high = '#267300', midpoint = 0.15) +
       theme_bw()
     sd_plot <- ggplot(dataset(), aes(x = x, y = y, fill = sds)) + 
       geom_tile() +
-      scale_fill_continuous(na.value = NA) +
+      scale_fill_continuous(na.value = NA, low = 'gray', high = 'red') +
       theme_bw()
     
     grid.arrange(mean_plot, sd_plot, ncol = 1)

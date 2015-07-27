@@ -1,4 +1,5 @@
 # ui.R
+all_taxa <- readRDS('data/all_taxa.RDS')
 
 shinyUI(pageWithSidebar(
 
@@ -7,7 +8,7 @@ shinyUI(pageWithSidebar(
   
   # Sidebar with dropdown choice of taxa:
   sidebarPanel(
-    selectInput("taxon", "PLSS Taxon", unique(all_taxa$taxon))),
+    selectInput("taxon", "PLSS Taxon", unique(as.character(all_taxa$taxon)))),
     
   mainPanel(plotOutput("MapPlot")))
 )
