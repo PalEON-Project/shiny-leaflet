@@ -14,8 +14,9 @@ shinyUI(pageWithSidebar(
       sliderInput(inputId = "zlimit",
                   label = "Scale upper limit:",
                   min = 0.05, max = 1, value = .5, step = 0.05),
-      width = 3
-      ),
-    
+     checkboxInput(inputId = "continuous",
+      label = strong("Continuous scale"),
+      value = TRUE),
+    width = 3), 
   mainPanel(plotOutput("MapPlot", width = "800px"), width = 9))
 )
