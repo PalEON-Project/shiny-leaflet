@@ -1,7 +1,9 @@
 Shiny
 =====
 
-This repository is the source code for interactive maps of PLS tree composition maps on the web using [Shiny](http://shiny.rstudio.com/).
+This repository is the source code for interactive maps of PLS tree composition maps on the web using [Shiny](http://shiny.rstudio.com/).  You can access the live page here:
+
+**[Shiny Presettlement Vegetation](http://gandalf.berkeley.edu:3838/paciorek/setVegComp/)**
 
 ###Development
 +  Michelle Mueller - Notre Dame
@@ -18,7 +20,8 @@ The program, as installed, loads the mean posterior output from Paciorek *et al*
 + **v0.1** - Plotting enabled for both means & standard deviations simultaneously, sped up the initial data loading by pre-processing data, added color scheme to plotting output
 
 ###TODO
-+ **v0.2** - Clean up the folders, remove old code & data files.  Add shapefiles on top of the mapped output. Create file output for mapped layers (to PDF or PNG) as well as data output (as CSV?).
++ **v0.2** - Clean up the folders, remove old code & data files.  Add shapefiles on top of the mapped output. Create file output for mapped layers (to PDF or PNG) as well as data output (as CSV?). [This realease goes to PalEON Team].
++ **v0.3** - Incorporate changes from PalEON Team. Address Issue notes for v0.3.
 
 ###Repo Organization
 Once the repo is cloned on your desktop and the required packages are installed (`shiny`, `ggplot2`, `gridExtra`, `RColorBrewer`), the app can be run from the file `RunShinyApp.R`.
