@@ -141,6 +141,10 @@ shinyServer(function(input,output){
     
     map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
       fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+        addRasterImage(layerId = "ds1SD",
+                       dataset1()$meansCut, 
+                       opacity = input$transparancy,
+                       colors = pal_ter) %>%
       addLegend("bottomright", pal = pal_sd, 
                 values = values(dataset1()$sdsCut),
                 title = "St. Dev.",
@@ -175,7 +179,7 @@ shinyServer(function(input,output){
     
     map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
       fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-      addRasterImage(layerId = "ds2Mean",
+      addRasterImage(layerId = "ds2SD",
                      dataset2()$sds, 
                      opacity = input$transparancy,
                      color = pal_sd)
