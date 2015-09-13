@@ -4,6 +4,7 @@ library(RColorBrewer)
 library(gridExtra)
 library(grid)
 library(leaflet)
+library(raster)
 
 #  Load the taxon data for all taxa:
 all_taxa <- readRDS('Data/all_taxa_ll.RDS')
