@@ -1,170 +1,228 @@
 library(shiny)
-require(ggplot2)
-require(RColorBrewer)
+library(ggplot2)
+library(RColorBrewer)
 library(gridExtra)
 library(grid)
+library(leaflet)
 
-all_taxa <- readRDS('data/all_taxa.RDS')
+#  Load the taxon data for all taxa:
+all_taxa <- readRDS('data/all_taxa_ll.RDS')
 
-load('data/shape.RData')
+boundlist <- list(map1 = NA,
+                  map2 = NA,
+                  map3 = NA,
+                  map4 = NA)
 
+
+#  This truncates the data values to some upper limit `lim`:
 thresh <- function(data, lim) {
-    data[data > lim] <- lim
+    if(class(data) == 'raster'){
+      data.vals <- getValues(data)
+      data.vals[data.vals > max(lim)] <- max(lim)
+      data <- setValues(data, data.vals)
+    } else {
+      data[data > max(lim)] <- max(lim)
+    }
+  
     return(data)
 }
 
 breaks <- c(0, 0.01, 0.05, 0.10, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1)
 sd_breaks <- c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
+
 max_sd <- max(sd_breaks)
-col <- rev(terrain.colors(length(breaks) - 1))
-col[1] <- terrain.colors(40)[39]
+
+#  Set the plotting colors 
+mean_col <- rev(terrain.colors(length(breaks) - 1))
+mean_col[1] <- terrain.colors(40)[39] # This whitens the lowest value marginally. 
 
 sd_col <- rev(heat.colors(length(sd_breaks)-1))
-
-
-# avoid having state boundaries cut off on edges
-xbuffer = c(-35000, 10000)
-ybuffer = c(0, 10000)
 
 mg0 <- c(0, 0, 0, 0)
 mg1 <- c(-5, 0, 0, 0)
 mg2 <- c(-12, 0, 0, 0)
-####################################################################################################################################
-#We couldn't get the US Albers shapefile to show up when running the Shiny App.
-#But we had the code below from Alex Dye for viewing Canada that he used when playing around with Shiny that we could make work 
+
+# Actual server side code:
 
 shinyServer(function(input,output){
-  
-  dataset1 <- reactive(function(){
-    sub <- subset(all_taxa, taxon == input$taxon1)
-    sub$sds <- thresh(sub$sds, max_sd)
-    sub$meansCut <- thresh(sub$means, input$zlimit)
-    sub$sdsCut <- thresh(sub$sds, input$zlimit_sd)
-    if(!input$continuous) {
-        sub$meansDiscrete <- cut(sub$meansCut, breaks = breaks, include.lowest = TRUE,labels = FALSE)
-        sub$sdsDiscrete <- cut(sub$sdsCut, breaks = breaks, include.lowest = TRUE,labels = FALSE)
-    }
-    sub
-   })
-  dataset2 <- reactive(function(){
-    if(input$taxon2 != "None") {
-        sub <- subset(all_taxa, taxon == input$taxon2)
-        sub$sds <- thresh(sub$sds, max_sd)
-        sub$meansCut <- thresh(sub$means, input$zlimit)
-        sub$sdsCut <- thresh(sub$sds, input$zlimit_sd)
-        if(!input$continuous) {
-            sub$meansDiscrete <- cut(sub$meansCut, breaks = breaks, include.lowest = TRUE,labels = FALSE)
-            sub$sdsDiscrete <- cut(sub$sdsCut, breaks = breaks, include.lowest = TRUE,labels = FALSE)
-        }
-        sub
-    } else NULL
-   })
-  
-  output$MapPlot<-renderPlot({
-     if(input$taxon2 == "None") mg <- mg0 else mg <- mg1
-     tmp <- cbind(breaks[1:(length(breaks)-1)], breaks[2:length(breaks)])
-     tmp[length(unique(dataset1()$meansDiscrete)), 2] <- max(dataset1()$means)
-     breaklabels <- apply(tmp, 1,  function(r) { sprintf("%0.2f - %0.2f", r[1], r[2]) })
-    if(!input$continuous) {
-        mean_plot <- ggplot(dataset1(), aes(x = x, y = y, fill = factor(meansDiscrete))) + scale_fill_manual(values = col, labels = breaklabels, guide = 'legend', name = 'proportion') } else {
-#        tmpcol <- rev(terrain.colors(16)); tmpcol[1] <- terrain.colors(40)[39]
-        mean_plot <- ggplot(dataset1(), aes(x = x, y = y, fill = meansCut)) +  
-#            scale_fill_gradient2(na.value = NA, low = '#ffebaf', mid = '#98e600', high = '#267300', midpoint = input$zlimit/2, name = 'proportion')
-            scale_fill_gradientn(na.value = NA, colours = rev(terrain.colors(15)), name = 'proportion',
-                                   guide = 'colourbar')
-    }
-    mean_plot <- mean_plot + geom_tile() + 
-    coord_equal() + ggtitle(paste(input$taxon1, ": Posterior mean proportion")) +
-     theme_bw() +  theme(axis.ticks = element_blank(), 
-                              axis.text.y = element_blank(), 
-                               axis.text.x = element_blank(),
-                               axis.title.x = element_blank(),
-                               axis.title.y = element_blank(),
-                               plot.margin = unit(mg, "cm"))
-     mean_plot1 <- mean_plot + geom_path(data = usFortified, aes(x= long, y = lat, group = group, fill = NULL, colour = NULL)) +
-         scale_x_continuous(limits = xbuffer + c(min(dataset1()$x, na.rm = TRUE), max(dataset1()$x, na.rm = TRUE))) +
-      scale_y_continuous(limits = ybuffer + c(min(dataset1()$y, na.rm = TRUE), max(dataset1()$y, na.rm = TRUE)))
-          
 
-     tmp <- cbind(sd_breaks[1:(length(sd_breaks)-1)], breaks[2:length(sd_breaks)])
-     tmp[length(unique(dataset1()$sdsDiscrete)), 2] <- max(dataset1()$sds)
-     sd_breaklabels <- apply(tmp, 1,  function(r) { sprintf("%0.2f - %0.2f", r[1], r[2]) })
-
-    if(!input$continuous) {
-        sd_plot <- ggplot(dataset1(), aes(x = x, y = y, fill = factor(sdsDiscrete))) + scale_fill_manual(values = sd_col, labels = breaklabels, guide = 'legend', name = '        sd    ') } else {
-#        tmpcol <- rev(terrain.colors(16)); tmpcol[1] <- terrain.colors(40)[39]
-        sd_plot <- ggplot(dataset1(), aes(x = x, y = y, fill = sdsCut)) +  
-#            scale_fill_gradient2(na.value = NA, low = '#ffebaf', mid = '#98e600', high = '#267300', midpoint = input$zlimit/2, name = 'proportion')
-            scale_fill_gradientn(na.value = NA, colours = rev(heat.colors(15)), name = '         sd    ',
-                                   guide = 'colourbar')
-    }
-     
-      sd_plot <- sd_plot + geom_tile() +
-      coord_equal() + ggtitle(paste(input$taxon1, ": Posterior standard deviation")) +
-          theme_bw() + theme(axis.ticks = element_blank(), 
-                               axis.text.y = element_blank(), 
-                               axis.text.x = element_blank(),
-                               axis.title.x = element_blank(),
-                               axis.title.y = element_blank(),
-                               plot.margin = unit(mg, "cm"))
-     sd_plot1 <- sd_plot + geom_path(data = usFortified, aes(x= long, y = lat, group = group, fill = NULL, colour = NULL)) +
-         scale_x_continuous(limits = xbuffer + c(min(dataset1()$x, na.rm = TRUE), max(dataset1()$x, na.rm = TRUE))) +
-      scale_y_continuous(limits = ybuffer + c(min(dataset1()$y, na.rm = TRUE), max(dataset1()$y, na.rm = TRUE)))
-
-    if(input$taxon2 != "None") {
-        # some repeated code here; could be cleaned up
-        tmp <- cbind(breaks[1:(length(breaks)-1)], breaks[2:length(breaks)])
-        tmp[length(unique(dataset2()$meansDiscrete)), 2] <- max(dataset2()$means)
-        breaklabels <- apply(tmp, 1,  function(r) { sprintf("%0.2f - %0.2f", r[1], r[2]) })
-        if(!input$continuous) {
-            mean_plot <- ggplot(dataset2(), aes(x = x, y = y, fill = factor(meansDiscrete))) + scale_fill_manual(values = col, labels = breaklabels, guide = 'legend', name = 'proportion') } else {
-                                        #        tmpcol <- rev(terrain.colors(16)); tmpcol[1] <- terrain.colors(40)[39]
-                                                                                                                                                                                                  mean_plot <- ggplot(dataset2(), aes(x = x, y = y, fill = meansCut)) +  
-                                        #            scale_fill_gradient2(na.value = NA, low = '#ffebaf', mid = '#98e600', high = '#267300', midpoint = input$zlimit/2, name = 'proportion')
-                                                                                                                                                                                                      scale_fill_gradientn(na.value = NA, colours = rev(terrain.colors(15)), name = 'proportion',
-                                                                                                                                                                                                                           guide = 'colourbar')
-                                                                                                                                                                                              }
-        mean_plot <- mean_plot + geom_tile() + 
-            coord_equal() + ggtitle(paste(input$taxon2, ": Posterior mean proportion")) +
-                theme_bw() +  theme(axis.ticks = element_blank(), 
-                                    axis.text.y = element_blank(), 
-                                    axis.text.x = element_blank(),
-                                    axis.title.x = element_blank(),
-                                    axis.title.y = element_blank(),
-                               plot.margin = unit(mg+mg2, "cm"))
-        mean_plot2 <- mean_plot + geom_path(data = usFortified, aes(x= long, y = lat, group = group, fill = NULL, colour = NULL)) +
-            scale_x_continuous(limits = xbuffer + c(min(dataset2()$x, na.rm = TRUE), max(dataset2()$x, na.rm = TRUE))) +
-                scale_y_continuous(limits = ybuffer + c(min(dataset2()$y, na.rm = TRUE), max(dataset2()$y, na.rm = TRUE)))
-        
-        
-        tmp <- cbind(sd_breaks[1:(length(sd_breaks)-1)], breaks[2:length(sd_breaks)])
-        tmp[length(unique(dataset2()$sdsDiscrete)), 2] <- max(dataset2()$sds)
-        sd_breaklabels <- apply(tmp, 1,  function(r) { sprintf("%0.2f - %0.2f", r[1], r[2]) })
-        
-        if(!input$continuous) {
-            sd_plot <- ggplot(dataset2(), aes(x = x, y = y, fill = factor(sdsDiscrete))) + scale_fill_manual(values = sd_col, labels = breaklabels, guide = 'legend', name = '        sd    ') } else {
-                                        #        tmpcol <- rev(terrain.colors(16)); tmpcol[1] <- terrain.colors(40)[39]
-                                                                                                                                                                                                     sd_plot <- ggplot(dataset2(), aes(x = x, y = y, fill = sdsCut)) +  
-                                        #            scale_fill_gradient2(na.value = NA, low = '#ffebaf', mid = '#98e600', high = '#267300', midpoint = input$zlimit/2, name = 'proportion')
-                                                                                                                                                                                                         scale_fill_gradientn(na.value = NA, colours = rev(heat.colors(15)), name = '         sd    ',
-                                                                                                                                                                                                                              guide = 'colourbar')
-                                                                                                                                                                                                 }
-        
-        sd_plot <- sd_plot + geom_tile() +
-            coord_equal() + ggtitle(paste(input$taxon2, ": Posterior standard deviation")) +
-                theme_bw() + theme(axis.ticks = element_blank(), 
-                                   axis.text.y = element_blank(), 
-                                   axis.text.x = element_blank(),
-                                   axis.title.x = element_blank(),
-                                   axis.title.y = element_blank(),
-                               plot.margin = unit(mg+mg2, "cm"))
-        sd_plot2 <- sd_plot + geom_path(data = usFortified, aes(x= long, y = lat, group = group, fill = NULL, colour = NULL)) +
-            scale_x_continuous(limits = xbuffer + c(min(dataset2()$x, na.rm = TRUE), max(dataset2()$x, na.rm = TRUE))) +
-                scale_y_continuous(limits = ybuffer + c(min(dataset2()$y, na.rm = TRUE), max(dataset2()$y, na.rm = TRUE)))
-        
-        
-        grid.arrange(mean_plot1, sd_plot1, mean_plot2, sd_plot2, ncol = 2)
-    } else grid.arrange(mean_plot1, sd_plot1, ncol = 1)
+  dataset1 <- reactive({
+    #  Recut the first dataset. 
+    # 1. extract the taxon specific information
+    # 2. Put the data into a raster for display with leaflet
+    # 3. Clip the upper values to the user defined upper limit (with `thresh`).
+    # 4. Convert to a continuous scale (if desired)
     
-  }, width = 700, height = 700)
+    sub <- subset(all_taxa, taxon == input$taxon1)
+    
+    output <- list()
+    
+    sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
+                         crs="+init=epsg:4326", resolution = 0.0833333)
+    
+    output$sds  <- setValues(sub_raster, unlist(sub$sds))
+    output$mean <- setValues(sub_raster, unlist(sub$means))
+    
+    output$meansCut <- thresh(output$mean, input$zlimit)
+    output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
+    
+    if(!input$continuous) {
+        output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
+        output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
+    }
+    output
+   })
+  
+  dataset2 <- reactive({
+    #  Recut the second dataset:
+    # 0. IF the user has chosen a second dataset. . . 
+    # 1. extract the taxon specific information
+    # 2. Put the data into a raster for display with leaflet
+    # 3. Clip the upper values to the user defined upper limit (with `thresh`).
+    # 4. Convert to a continuous scale (if desired)
+    
+    sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
+                         crs="+init=epsg:4326", resolution = 0.0833333)
+    
+    if(input$taxon2 != "None") {
+      
+      sub <- subset(all_taxa, taxon == input$taxon2)
+      
+      output <- list()
+      
+      output$sds  <- setValues(sub_raster, unlist(sub$sds))
+      output$mean <- setValues(sub_raster, unlist(sub$means))
+      
+      output$meansCut <- thresh(output$mean, input$zlimit)
+      output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
+      
+      if(!input$continuous) {
+        output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
+        output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
+      }
+      output
+    } else {
+      output <- list(mean = sub_raster,
+                     sds = sub_raster,
+                     meansCut = sub_raster,
+                     sdsCut = sub_raster)
+    }
+                     
+  })
+  
+  output$MapPlot<-renderLeaflet({
+    
+    pal_ter <- colorNumeric(
+      palette = rev(terrain.colors(40)),
+      domain = getValues(dataset1()$meansCut),
+      na.color=NA)
+    
+    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
+        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+        addRasterImage(layerId = "ds1Mean",
+                       dataset1()$meansCut, 
+                       opacity = input$transparancy,
+                       colors = pal_ter) %>%
+        addLegend("bottomright", pal = pal_ter, 
+                  values = values(dataset1()$meansCut),
+                  title = "Proportion",
+                  labFormat = labelFormat(),
+                  opacity = 1
+        )
+    })
+  
+  output$MapPlot2<-renderLeaflet({
+    
+    pal_sd <- colorNumeric(
+      palette = c('#fbdede', '#e50000'),
+      domain = getValues(dataset1()$sdsCut),
+      na.color=NA)
+    
+    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
+      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+      addLegend("bottomright", pal = pal_sd, 
+                values = values(dataset1()$sdsCut),
+                title = "St. Dev.",
+                labFormat = labelFormat(),
+                opacity = 1
+      )
+    
+  })
+  
+  output$MapPlot3<-renderLeaflet({
+    
+    pal_ter <- colorNumeric(
+      palette = rev(terrain.colors(40)),
+      domain = c(0,input$zlimit),
+      na.color=NA)
+    
+    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
+      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+      addRasterImage(layerId = "ds2Mean",
+                     dataset2()$meansCut, 
+                     opacity = input$transparancy,
+                     colors = pal_ter)
+    
+  })
+
+  output$MapPlot4<-renderLeaflet({
+    
+    pal_sd <- colorNumeric(
+      palette = c('#fbdede', '#e50000'),
+      domain = getValues(dataset1()$sdsCut),
+      na.color=NA)
+    
+    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
+      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+      addRasterImage(layerId = "ds2Mean",
+                     dataset2()$sds, 
+                     opacity = input$transparancy,
+                     color = pal_sd)
+    
+  })
+  
+  
+  
+  observe({
+
+    pal_sd <- colorNumeric(
+      palette = c('#fbdede', '#e50000'),
+      domain = c(0,input$zlimit_sd),
+      na.color=NA)
+    
+    pal_ter <- colorNumeric(
+      palette = rev(terrain.colors(40)),
+      domain = c(0,input$zlimit),
+      na.color=NA)
+        
+    leafletProxy("MapPlot") %>%
+      clearImages() %>%
+      addRasterImage(layerId = "ds1Mean",
+                     dataset1()$meansCut, 
+                     opacity = input$transparancy,
+                     colors = pal_ter)
+    
+    leafletProxy("MapPlot2") %>%
+      clearImages() %>%
+      addRasterImage(layerId = "ds1SD",
+                     dataset1()$sdsCut, 
+                     opacity = input$transparancy,
+                     colors = pal_sd)
+    
+    leafletProxy("MapPlot3") %>%
+      clearImages() %>%
+      addRasterImage(layerId = "ds2Mean",
+                     dataset2()$meansCut, 
+                     opacity = input$transparancy,
+                     colors = pal_ter)
+    
+    leafletProxy("MapPlot4") %>%
+      clearImages() %>%
+      addRasterImage(layerId = "ds2SD",
+                     dataset2()$sdsCut, 
+                     opacity = input$transparancy,
+                     colors = pal_sd)
+  
+  })
+      
 })

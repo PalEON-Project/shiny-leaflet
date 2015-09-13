@@ -3,25 +3,35 @@ library(shiny)
 
 all_taxa <- readRDS('data/all_taxa.RDS')
 
-shinyUI(pageWithSidebar(
-
-
+shinyUI(fluidPage(
   # Application title:
-  headerPanel("Settlement-era Tree Composition"),
+  titlePanel("Settlement-era Tree Composition"),
   
   # Sidebar with dropdown choice of taxa:
   sidebarPanel(
     selectInput("taxon1", "PLSS Taxon", unique(as.character(all_taxa$taxon))),
     selectInput("taxon2", "PLSS Second Taxon", c("None", unique(as.character(all_taxa$taxon)))),
       sliderInput(inputId = "zlimit",
-                  label = "Scale upper limit:",
+                  label = "Upper limit (estimates):",
                   min = 0.05, max = 1, value = .5, step = 0.1),
       sliderInput(inputId = "zlimit_sd",
-                  label = "Scale upper limit (for uncertainty):",
+                  label = "Upper limit (Uncertainty):",
                   min = 0.0, max = .25, value = .25, step = 0.05),
+      sliderInput(inputId = "transparancy",
+                  label = "Transparancy:",
+                  min = 0.0, max = 1, value = 0.5, step = 0.05),
      checkboxInput(inputId = "continuous",
       label = strong("Continuous scale"),
       value = TRUE),
-    width = 3), 
-  mainPanel(plotOutput("MapPlot", width = "800px"), width = 9))
-)
+    width = 2),
+    
+  mainPanel(fluidRow(
+    column(5,leafletOutput("MapPlot")),
+    column(5,leafletOutput("MapPlot2"))
+    ),
+    conditionalPanel(condition="input.taxon2!=='None'",
+                     fluidRow(
+                      column(5,leafletOutput("MapPlot3")),
+                      column(5,leafletOutput("MapPlot4"))
+                    ))
+  )))
