@@ -6,7 +6,7 @@ library(grid)
 library(leaflet)
 
 #  Load the taxon data for all taxa:
-all_taxa <- readRDS('data/all_taxa_ll.RDS')
+all_taxa <- readRDS('Data/all_taxa_ll.RDS')
 
 boundlist <- list(map1 = NA,
                   map2 = NA,

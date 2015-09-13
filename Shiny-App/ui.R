@@ -2,7 +2,7 @@
 library(shiny)
 library(leaflet)
 
-all_taxa <- readRDS('data/all_taxa.RDS')
+all_taxa <- readRDS('Data/all_taxa.RDS')
 
 shinyUI(fluidPage(
   # Application title:
