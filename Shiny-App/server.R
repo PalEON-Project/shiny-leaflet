@@ -144,7 +144,7 @@ shinyServer(function(input,output){
         addRasterImage(layerId = "ds1SD",
                        dataset1()$meansCut, 
                        opacity = input$transparancy,
-                       colors = pal_ter) %>%
+                       colors = pal_sd) %>%
       addLegend("bottomright", pal = pal_sd, 
                 values = values(dataset1()$sdsCut),
                 title = "St. Dev.",
