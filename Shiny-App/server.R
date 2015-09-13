@@ -170,7 +170,7 @@ shinyServer(function(input,output){
     
     pal_sd <- colorNumeric(
       palette = c('#fbdede', '#e50000'),
-      domain = getValues(dataset1()$sdsCut),
+      domain = getValues(dataset2()$sdsCut),
       na.color=NA)
     
     map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
