@@ -154,7 +154,7 @@ shinyServer(function(input,output){
     
     pal_ter <- colorNumeric(
       palette = rev(terrain.colors(40)),
-      domain = c(0,input$zlimit),
+      domain = getValues(dataset2()$meansCut),
       na.color=NA)
     
     map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
