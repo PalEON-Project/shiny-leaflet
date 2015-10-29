@@ -12,8 +12,7 @@ all_taxa <- readRDS('Data/all_taxa_ll.RDS')
 boundlist <- list(map1 = NA,
                   map2 = NA)
 
-
-#  This truncates the data values to some upper limit `lim`:
+#  This truncates the data values to limits `lim`, that will come from the user:
 thresh <- function(data, lim) {
     if(class(data) == 'raster'){
       data.vals <- getValues(data)
@@ -60,11 +59,11 @@ shinyServer(function(input,output){
     }
     
     output
+    
    })
   
   dataset2 <- reactive({
     #  Recut the second dataset:
-    # 0. IF the user has chosen a second dataset. . . 
     # 1. extract the taxon specific information
     # 2. Put the data into a raster for display with leaflet
     # 3. Clip the upper values to the user defined upper limit (with `thresh`).
@@ -73,33 +72,26 @@ shinyServer(function(input,output){
     sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
                          crs="+init=epsg:4326", resolution = 0.0833333)
     
-    if(input$taxon2 != "None") {
-      
-      sub <- subset(all_taxa, taxon == input$taxon2)
-      
-      output <- list()
-      
-      output$sds  <- setValues(sub_raster, unlist(sub$sds))
-      output$mean <- setValues(sub_raster, unlist(sub$means))
-      
-      output$meansCut <- thresh(output$mean, input$zlimit)
-      output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
-      
-      if(!input$continuous) {
-        output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
-        output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
-      }
-      output
-    } else {
-      output <- list(mean = sub_raster,
-                     sds = sub_raster,
-                     meansCut = sub_raster,
-                     sdsCut = sub_raster)
+    sub <- subset(all_taxa, taxon == input$taxon2)
+    
+    output <- list()
+    
+    output$sds  <- setValues(sub_raster, unlist(sub$sds))
+    output$mean <- setValues(sub_raster, unlist(sub$means))
+    
+    output$meansCut <- thresh(output$mean, input$zlimit)
+    output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
+    
+    if(!input$continuous) {
+      output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
+      output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
     }
-                     
+    output
+
   })
   
-  output$MapPlot<-renderLeaflet({
+  # Plotting out the upper panel:
+  output$MapPlot1 <- renderLeaflet({
     
     # Renders the upper plot.
 
@@ -108,14 +100,14 @@ shinyServer(function(input,output){
       plotvals <- dataset1()$meansCut
       title <- paste0("Proportion\n", input$taxon1)
       
-      # Colors are pulled from the range of the
-      # input data.
+      # Colors are pulled from the range of the input data.
       palette <- colorNumeric(palette = input$rampPalette,
                                domain = getValues(dataset1()$meansCut),
                                na.color=NA)
       
     } else {
       
+      #  If the sd box is checked:
       plotvals <- dataset1()$sdsCut
       title <- paste0("St. Dev\n", input$taxon1)
       
@@ -125,40 +117,34 @@ shinyServer(function(input,output){
       
     }
     
+    #  Laying out the map (without pipe notation):
+    map <- addProviderTiles(leaflet(), 
+                            input$baseTile)
+    
+    map <- addRasterImage(map, 
+                          layerId = "UpperPlot",
+                          plotvals, 
+                          opacity = input$opacity/100,
+                          colors = palette)
+    
     if(input$labelTile){
-      # If the user clicked 
-      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
-        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-        addRasterImage(layerId = "LowerPlot",
-                       plotvals, 
-                       opacity = input$opacity/100,
-                       colors = palette) %>%
-        addProviderTiles("Stamen.TonerLabels") %>%
-      addLegend("bottomright", pal = palette, 
-                values = values(plotvals),
-                title = title,
-                labFormat = labelFormat(),
-                opacity = 1)
-    } else {
-      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
-        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-        addRasterImage(layerId = "LowerPlot",
-                       plotvals, 
-                       opacity = input$opacity/100,
-                       colors = palette) %>%         
-        addLegend("bottomright", pal = palette, 
-                  values = values(plotvals),
-                  title = title,
-                  labFormat = labelFormat(),
-                  opacity = 1)
+      #  This adds the labels above the raster layer:
+      map <- addProviderTiles(map, "Stamen.TonerLabels")
     }
+    
+    map <- addLegend(map, "bottomright", pal = palette, 
+                     values = values(plotvals),
+                     title = title,
+                     labFormat = labelFormat(),
+                     opacity = 1)
     
     })
   
-  output$MapPlot2<-renderLeaflet({
+  # Plotting out the lower panel:
+  output$MapPlot2 <- renderLeaflet({
     
     if(!input$sd_box_2){
-      # If a species is selected, but its SD is not chosen for display:
+      # As above. If a species is selected, but its SD is not chosen for display:
       plotvals <- dataset2()$meansCut
       title <- paste0("Propoportion\n",
                       input$taxon2)
@@ -166,8 +152,6 @@ shinyServer(function(input,output){
       palette <- colorNumeric(palette = input$rampPalette,
                               domain = getValues(dataset2()$meansCut),
                               na.color=NA)
-      
-      #  plot_legend <-   
     } else {
       
       plotvals <- dataset2()$sdsCut
@@ -177,38 +161,41 @@ shinyServer(function(input,output){
       palette <- colorNumeric(palette = input$sdPalette,
                               domain = getValues(dataset2()$sdsCut),
                               na.color=NA)
-      
     }
+    
+    #  Laying out the map (without pipe notation):
+    map <- addProviderTiles(leaflet(),
+                            input$baseTile)
+                   
+    map <- addRasterImage(map, 
+                          layerId = "LowerPlot",
+                          plotvals, 
+                          opacity = input$opacity/100,
+                          colors = palette)
     
     if(input$labelTile){
-      # If the user clicked 
-      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
-        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-          addRasterImage(layerId = "LowerPlot",
-                         plotvals, 
-                         opacity = input$opacity/100,
-                         colors = palette) %>%
-        addProviderTiles("Stamen.TonerLabels") %>%
-        addLegend("bottomright", pal = palette, 
-          values = values(plotvals),
-          title = title,
-          labFormat = labelFormat(),
-          opacity = 1)
-    } else {
-      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
-        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-        addRasterImage(layerId = "LowerPlot",
-                       plotvals, 
-                       opacity = input$opacity/100,
-                       colors = palette) %>%         
-        addLegend("bottomright", pal = palette, 
-                  values = values(plotvals),
-                  title = title,
-                  labFormat = labelFormat(),
-                  opacity = 1)
+      map <- addProviderTiles(map, "Stamen.TonerLabels")
     }
     
+    map <- addLegend(map, "bottomright", pal = palette, 
+                      values = values(plotvals),
+                      title = title,
+                      labFormat = labelFormat(),
+                      opacity = 1)
     
   })
-
+  
+  observe({
+    leafletProxy("MapPlot1") %>%
+      setView(lng = input$MapPlot2_center$lng,
+              lat = input$MapPlot2_center$lat,
+              zoom = input$MapPlot2_zoom)  })
+  
+  observe({
+    leafletProxy("MapPlot2") %>%
+      setView(lng = input$MapPlot1_center$lng,
+              lat = input$MapPlot1_center$lat,
+              zoom = input$MapPlot1_zoom) })
+  
+  
 })

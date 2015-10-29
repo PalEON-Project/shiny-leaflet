@@ -59,7 +59,7 @@ shinyUI(fluidPage(
                                    unique(as.character(all_taxa$taxon))),
                        checkboxInput("sd_box_2", "Uncertainty St. Dev")))),
     column(8,
-           leafletOutput("MapPlot"),
+           leafletOutput("MapPlot1"),
            leafletOutput("MapPlot2"))
     ))
   ))
