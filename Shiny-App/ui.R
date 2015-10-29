@@ -3,36 +3,63 @@ library(shiny)
 library(leaflet)
 
 all_taxa <- readRDS('Data/all_taxa_ll.RDS')
+maptypes <- c("MapQuestOpen.Aerial",
+               "Stamen.TerrainBackground",
+               "Stamen.Terrain",
+               "Esri.WorldImagery",
+               "Esri.OceanBasemap",
+               'OpenStreetMap',
+               "Stamen.TonerLines")
+
+color_palettes <- c("Blues", "BuGn",
+                    "BuPu", "GnBu",
+                    "Greens", "Greys",
+                    "Oranges", "OrRd",
+                    "PuBu", "PuBuGn",
+                    "PuRd", "Purples",
+                    "RdPu", "Reds",
+                    "YlGn", "YlGnBu",
+                    "YlOrBr", "YlOrRd")
 
 shinyUI(fluidPage(
   # Application title:
   titlePanel("Settlement-era Tree Composition"),
   
-  # Sidebar with dropdown choice of taxa:
-  sidebarPanel(
-    selectInput("taxon1", "PLSS Taxon", unique(as.character(all_taxa$taxon))),
-    selectInput("taxon2", "PLSS Second Taxon", c("None", unique(as.character(all_taxa$taxon)))),
-      sliderInput(inputId = "zlimit",
-                  label = "Upper limit (estimates):",
-                  min = 0.05, max = 1, value = .5, step = 0.1),
-      sliderInput(inputId = "zlimit_sd",
-                  label = "Upper limit (Uncertainty):",
-                  min = 0.0, max = .25, value = .25, step = 0.05),
-      sliderInput(inputId = "transparancy",
-                  label = "Transparancy:",
-                  min = 0.0, max = 1, value = 0.5, step = 0.05),
-     checkboxInput(inputId = "continuous",
-      label = strong("Continuous scale"),
-      value = TRUE),
-    width = 2),
-    
+  # The first row has two columns, one with overall map options,
+  # The other with selections
   mainPanel(fluidRow(
-    column(5,leafletOutput("MapPlot")),
-    column(5,leafletOutput("MapPlot2"))
-    ),
-    conditionalPanel(condition="input.taxon2!=='None'",
-                     fluidRow(
-                      column(5,leafletOutput("MapPlot3")),
-                      column(5,leafletOutput("MapPlot4"))
-                    ))
-  )))
+      column(2,
+           h3("Map Controls"),
+           selectInput('baseTile', "Map Tileset",
+                          maptypes),
+           checkboxInput("labelTile", "Add Map Labels"),
+           selectInput("rampPalette", "Proportion Palette",
+                       color_palettes),
+           selectInput("sdPalette", "St. Dev. Palette",
+                       color_palettes),
+           sliderInput(inputId = "zlimit",
+                       label = "Display Range limits (proportion):",
+                       min = 0, max = 1, value = c(0,.5), step = 0.01),
+           sliderInput(inputId = "zlimit_sd",
+                       label = "Uncertainty limits (proportion):",
+                       min = 0.0, max = .25, value = c(0,.25), step = 0.01),
+           sliderInput(inputId = "opacity",
+                       label = "Opacity (%):",
+                       min = 0.0, max = 100, value = 50, step = 5),
+           checkboxInput(inputId = "continuous",
+                         label = strong("Continuous scale"),
+                         value = TRUE)),
+       column(2,
+           wellPanel(h3("Panel One"),
+                     p(selectInput("taxon1", "PLSS Taxon", 
+                                   unique(as.character(all_taxa$taxon))),
+                       checkboxInput("sd_box_1", "Uncertainty St. Dev"))),
+           wellPanel(h3("Panel Two"),
+                     p(selectInput("taxon2", "PLSS Taxon", 
+                                   unique(as.character(all_taxa$taxon))),
+                       checkboxInput("sd_box_2", "Uncertainty St. Dev")))),
+    column(8,
+           leafletOutput("MapPlot"),
+           leafletOutput("MapPlot2"))
+    ))
+  ))

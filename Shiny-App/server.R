@@ -10,9 +10,7 @@ library(raster)
 all_taxa <- readRDS('Data/all_taxa_ll.RDS')
 
 boundlist <- list(map1 = NA,
-                  map2 = NA,
-                  map3 = NA,
-                  map4 = NA)
+                  map2 = NA)
 
 
 #  This truncates the data values to some upper limit `lim`:
@@ -20,28 +18,15 @@ thresh <- function(data, lim) {
     if(class(data) == 'raster'){
       data.vals <- getValues(data)
       data.vals[data.vals > max(lim)] <- max(lim)
+      data.vals[data.vals < min(lim)] <- NA
       data <- setValues(data, data.vals)
     } else {
       data[data > max(lim)] <- max(lim)
+      data[data < min(lim)] <- NA
     }
   
     return(data)
 }
-
-breaks <- c(0, 0.01, 0.05, 0.10, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1)
-sd_breaks <- c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
-
-max_sd <- max(sd_breaks)
-
-#  Set the plotting colors 
-mean_col <- rev(terrain.colors(length(breaks) - 1))
-mean_col[1] <- terrain.colors(40)[39] # This whitens the lowest value marginally. 
-
-sd_col <- rev(heat.colors(length(sd_breaks)-1))
-
-mg0 <- c(0, 0, 0, 0)
-mg1 <- c(-5, 0, 0, 0)
-mg2 <- c(-12, 0, 0, 0)
 
 # Actual server side code:
 
@@ -67,10 +52,13 @@ shinyServer(function(input,output){
     output$meansCut <- thresh(output$mean, input$zlimit)
     output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
     
+    output$sdsCut[is.na(output$meansCut)] <- NA
+    
     if(!input$continuous) {
-        output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
-        output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
+        output$meansDiscrete <- cut(output$meansCut, breaks = pretty(input$zlimit), include.lowest = TRUE)
+        output$sdsDiscrete <- cut(output$sdsCut, breaks = pretty(input$zlimit), include.lowest = TRUE)
     }
+    
     output
    })
   
@@ -113,121 +101,114 @@ shinyServer(function(input,output){
   
   output$MapPlot<-renderLeaflet({
     
-    pal_ter <- colorNumeric(
-      palette = rev(terrain.colors(40)),
-      domain = getValues(dataset1()$meansCut),
-      na.color=NA)
+    # Renders the upper plot.
+
+    if(!input$sd_box_1){
+      # If a species is selected, but its SD is not chosen for display:
+      plotvals <- dataset1()$meansCut
+      title <- paste0("Proportion\n", input$taxon1)
+      
+      # Colors are pulled from the range of the
+      # input data.
+      palette <- colorNumeric(palette = input$rampPalette,
+                               domain = getValues(dataset1()$meansCut),
+                               na.color=NA)
+      
+    } else {
+      
+      plotvals <- dataset1()$sdsCut
+      title <- paste0("St. Dev\n", input$taxon1)
+      
+      palette <- colorNumeric(palette = input$sdPalette,
+                               domain = getValues(dataset1()$sdsCut),
+                               na.color=NA)
+      
+    }
     
-    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
+    if(input$labelTile){
+      # If the user clicked 
+      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
         fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-        addRasterImage(layerId = "ds1Mean",
-                       dataset1()$meansCut, 
-                       opacity = input$transparancy,
-                       colors = pal_ter) %>%
-        addLegend("bottomright", pal = pal_ter, 
-                  values = values(dataset1()$meansCut),
-                  title = "Proportion",
+        addRasterImage(layerId = "LowerPlot",
+                       plotvals, 
+                       opacity = input$opacity/100,
+                       colors = palette) %>%
+        addProviderTiles("Stamen.TonerLabels") %>%
+      addLegend("bottomright", pal = palette, 
+                values = values(plotvals),
+                title = title,
+                labFormat = labelFormat(),
+                opacity = 1)
+    } else {
+      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
+        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+        addRasterImage(layerId = "LowerPlot",
+                       plotvals, 
+                       opacity = input$opacity/100,
+                       colors = palette) %>%         
+        addLegend("bottomright", pal = palette, 
+                  values = values(plotvals),
+                  title = title,
                   labFormat = labelFormat(),
-                  opacity = 1
-        )
+                  opacity = 1)
+    }
+    
     })
   
   output$MapPlot2<-renderLeaflet({
     
-    pal_sd <- colorNumeric(
-      palette = c('#fbdede', '#e50000'),
-      domain = getValues(dataset1()$sdsCut),
-      na.color=NA)
-    
-    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
-      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-        addRasterImage(layerId = "ds1SD",
-                       dataset1()$meansCut, 
-                       opacity = input$transparancy,
-                       colors = pal_sd) %>%
-      addLegend("bottomright", pal = pal_sd, 
-                values = values(dataset1()$sdsCut),
-                title = "St. Dev.",
-                labFormat = labelFormat(),
-                opacity = 1
-      )
-    
-  })
-  
-  output$MapPlot3<-renderLeaflet({
-    
-    pal_ter <- colorNumeric(
-      palette = rev(terrain.colors(40)),
-      domain = getValues(dataset2()$meansCut),
-      na.color=NA)
-    
-    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
-      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-      addRasterImage(layerId = "ds2Mean",
-                     dataset2()$meansCut, 
-                     opacity = input$transparancy,
-                     colors = pal_ter)
-    
-  })
-
-  output$MapPlot4<-renderLeaflet({
-    
-    pal_sd <- colorNumeric(
-      palette = c('#fbdede', '#e50000'),
-      domain = getValues(dataset2()$sdsCut),
-      na.color=NA)
-    
-    map <- leaflet() %>% addProviderTiles("Esri.WorldImagery") %>%
-      fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
-      addRasterImage(layerId = "ds2SD",
-                     dataset2()$sds, 
-                     opacity = input$transparancy,
-                     color = pal_sd)
-    
-  })
-  
-  
-  
-  observe({
-
-    pal_sd <- colorNumeric(
-      palette = c('#fbdede', '#e50000'),
-      domain = c(0,input$zlimit_sd),
-      na.color=NA)
-    
-    pal_ter <- colorNumeric(
-      palette = rev(terrain.colors(40)),
-      domain = c(0,input$zlimit),
-      na.color=NA)
-        
-    leafletProxy("MapPlot") %>%
-      clearImages() %>%
-      addRasterImage(layerId = "ds1Mean",
-                     dataset1()$meansCut, 
-                     opacity = input$transparancy,
-                     colors = pal_ter)
-    
-    leafletProxy("MapPlot2") %>%
-      clearImages() %>%
-      addRasterImage(layerId = "ds1SD",
-                     dataset1()$sdsCut, 
-                     opacity = input$transparancy,
-                     colors = pal_sd)
-    
-    leafletProxy("MapPlot3") %>%
-      clearImages() %>%
-      addRasterImage(layerId = "ds2Mean",
-                     dataset2()$meansCut, 
-                     opacity = input$transparancy,
-                     colors = pal_ter)
-    
-    leafletProxy("MapPlot4") %>%
-      clearImages() %>%
-      addRasterImage(layerId = "ds2SD",
-                     dataset2()$sdsCut, 
-                     opacity = input$transparancy,
-                     colors = pal_sd)
-  
-  })
+    if(!input$sd_box_2){
+      # If a species is selected, but its SD is not chosen for display:
+      plotvals <- dataset2()$meansCut
+      title <- paste0("Propoportion\n",
+                      input$taxon2)
+      # Colors are pulled from the range of 
+      palette <- colorNumeric(palette = input$rampPalette,
+                              domain = getValues(dataset2()$meansCut),
+                              na.color=NA)
       
+      #  plot_legend <-   
+    } else {
+      
+      plotvals <- dataset2()$sdsCut
+      title <- paste0("St. Dev\n",
+                      input$taxon2)
+      
+      palette <- colorNumeric(palette = input$sdPalette,
+                              domain = getValues(dataset2()$sdsCut),
+                              na.color=NA)
+      
+    }
+    
+    if(input$labelTile){
+      # If the user clicked 
+      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
+        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+          addRasterImage(layerId = "LowerPlot",
+                         plotvals, 
+                         opacity = input$opacity/100,
+                         colors = palette) %>%
+        addProviderTiles("Stamen.TonerLabels") %>%
+        addLegend("bottomright", pal = palette, 
+          values = values(plotvals),
+          title = title,
+          labFormat = labelFormat(),
+          opacity = 1)
+    } else {
+      map <- leaflet() %>% addProviderTiles(input$baseTile) %>%
+        fitBounds(lng1=-98.6,lng2=-66.1,lat1=36.5,lat2=49.75) %>%
+        addRasterImage(layerId = "LowerPlot",
+                       plotvals, 
+                       opacity = input$opacity/100,
+                       colors = palette) %>%         
+        addLegend("bottomright", pal = palette, 
+                  values = values(plotvals),
+                  title = title,
+                  labFormat = labelFormat(),
+                  opacity = 1)
+    }
+    
+    
+  })
+
 })
