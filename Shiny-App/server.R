@@ -138,6 +138,7 @@ shinyServer(function(input,output){
                      labFormat = labelFormat(),
                      opacity = 1)
     
+    setView(map, lat = 43, lng = -81, zoom = 5)
     })
   
   # Plotting out the lower panel:
@@ -183,6 +184,7 @@ shinyServer(function(input,output){
                       labFormat = labelFormat(),
                       opacity = 1)
     
+    setView(map, lat = 43, lng = -81, zoom = 5)
   })
   
   observe({
