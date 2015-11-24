@@ -188,12 +188,6 @@ shinyServer(function(input,output){
   })
   
   observe({
-    leafletProxy("MapPlot1") %>%
-      setView(lng = input$MapPlot2_center$lng,
-              lat = input$MapPlot2_center$lat,
-              zoom = input$MapPlot2_zoom)  })
-  
-  observe({
     leafletProxy("MapPlot2") %>%
       setView(lng = input$MapPlot1_center$lng,
               lat = input$MapPlot1_center$lat,
