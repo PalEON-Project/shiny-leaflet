@@ -28,7 +28,7 @@ shinyUI(fluidPage(
   # The first row has two columns, one with overall map options,
   # The other with selections
   mainPanel(fluidRow(
-      column(2,
+      column(3,
            h3("Map Controls"),
            selectInput('baseTile', "Map Tileset",
                           maptypes),
@@ -57,8 +57,14 @@ shinyUI(fluidPage(
            wellPanel(h3("Panel Two"),
                      p(selectInput("taxon2", "PLSS Taxon", 
                                    unique(as.character(all_taxa$taxon))),
-                       checkboxInput("sd_box_2", "Uncertainty St. Dev")))),
-    column(8,
+                       checkboxInput("sd_box_2", "Uncertainty St. Dev"))),
+           wellPanel(h3("Download"),
+                     p(selectInput("dlPanel", "Panel", 
+                                   c('One', 'Two')),
+                       selectInput("FileType", "File Type", 
+                                   c('raster', 'csv'))),
+                     downloadButton('downloadData', 'Download'))),
+    column(7,
            leafletOutput("MapPlot1"),
            leafletOutput("MapPlot2"))
     ))

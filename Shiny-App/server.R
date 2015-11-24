@@ -90,6 +90,24 @@ shinyServer(function(input,output){
 
   })
   
+  output$downloadData <- downloadHandler(
+
+    filename = function(){
+      file = paste0(ifelse(input$dlPanel == 'One', input$taxon1, input$taxon2), 
+             '_', input$FileType, '.zip')
+      file
+    },
+    content = function(file) {
+      filename <- paste0('data/zips/', input$FileType, '/',
+                         ifelse(input$dlPanel == 'One', input$taxon1, input$taxon2), 
+                         '_', input$FileType, '.zip')
+      cat(filename, filename %in% list.files(paste0('data/zips/', input$FileType)))
+      
+      file.copy(filename, file)
+    },
+    contentType = "application/zip"
+  )
+  
   # Plotting out the upper panel:
   output$MapPlot1 <- renderLeaflet({
     

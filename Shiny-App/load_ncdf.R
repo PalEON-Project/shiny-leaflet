@@ -1,13 +1,14 @@
 library(raster)
 library(ncdf4)
 
-domain <- nc_open('Data/composition_v0.3.nc', write = FALSE)
+domain <- nc_open('Shiny-App/Data/composition_v0.3.nc', write = FALSE)
 
 taxa <- unique(names(domain$var))
 
 comp_grid <- expand.grid(x = ncvar_get(domain, 'x'), y = ncvar_get(domain, 'y'))
 
 taxon_to_df <- function(taxon){
+
   # Calculate means & SDs for each taxon and each domain:
   mean_taxa <- as.vector(apply(ncvar_get(domain, taxon, c(1,1,1), c(-1, -1, -1)), c(1,2), mean))
   sd_taxa   <- as.vector(apply(ncvar_get(domain, taxon, c(1,1,1), c(-1, -1, -1)), c(1,2), sd))
@@ -33,7 +34,20 @@ taxon_to_df <- function(taxon){
   
   mean_rast <- rasterize(taxa_df, y = empty_ab, field = 'means', fun=mean, na.rm=TRUE)
   sd_rast <- rasterize(taxa_df, y = empty_ab, field = 'sds', fun=mean, na.rm=TRUE)
+
+  name_taxon <- gsub(' ', '_', taxon)
+  name_taxon <- gsub('/', '_', name_taxon)
+  writeRaster(stack(list(mean = mean_rast,sd = sd_rast)), filename = paste0('Shiny-App/data/rasters/',name_taxon,'.tiff'),
+              overwrite=TRUE)
   
+  df.output <- data.frame(xyFromCell(mean_rast, 1:ncell(mean_rast)),
+                          taxon = taxon,
+                          mean = getValues(mean_rast),
+                          sd   = getValues(mean_rast),
+                          proj = c(proj4string(mean_rast), rep(NA,ncell(mean_rast)-1)))
+  
+  write.csv(df.output, file = paste0('Shiny-App/data/csvs/',name_taxon,'.csv'))
+    
   mean_ll <- projectRaster(mean_rast, empty_ll)
   sd_ll   <- projectRaster(sd_rast,   empty_ll)
   
@@ -41,10 +55,10 @@ taxon_to_df <- function(taxon){
                         taxon = taxon,
                         means = getValues(mean_ll),
                         sds   = getValues(sd_ll))
-  taxa_df
-  
+ taxa_df
+  cat('done', taxon,'\n')
 }
-
+lapply(taxa, taxon_to_df)
 all_taxa <- do.call(rbind.data.frame,lapply(taxa, taxon_to_df))
 
 saveRDS(object = all_taxa, file = 'Data/all_taxa_ll.RDS')
