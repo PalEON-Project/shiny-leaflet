@@ -1,0 +1,43 @@
+READ ME
+-----------------------------------------
+This work represents intellectuals contribution by Christopher Paciorek and Simon Goring, and the PalEON Team.  This work is published as:
+
+@Article{paciorek2015comp,
+  Title                    = {A multivariate statistical model for estimating uncertainty from historical forest composition},
+  Author                   = {Paciorek, Christopher J and Thurman, Andrew and Goring, Simon and Dawson, Andria and others},
+  Journal                  = {PLoS One},
+  Year                     = {in revision},
+  doi                      = {http://arxiv.org/abs/1508.07509}
+}
+
+@Article{goring2015preset,
+  Title                    = {Changes in Forest Composition, Stem Density, and Biomass from the Settlement Era (1800s) to Present in the Upper Midwestern {U}nited {S}tates},
+  Author                   = {Goring, Simon J and Mladenoff, David J and Cogbill, Charles V Record, Sydne and Paciorek, Christopher J and Jackson, Stephen T and Dietze, Michael C and Dawson, Andria and Matthes, Jaclyn H and McLachlan, Jason S and Williams, John W},
+  Journal                  = {PLoS One},
+  Year                     = {in review},
+  doi                      = {http://dx.doi.org/10.1101/026575}
+}
+
+The Shiny site is hosted by UC-Berekeley, and the code is available under an MIT License at:
+
+http://www.github.com/SimonGoring/shiny
+
+The PalEON Data Agreement is available at http.
+
+Methods:
+-----------------------------------------
+Primary survey data was obtained from a number of data collection efforts across the northeastern United States (references in Paciorek et al., and Goring et al.).  Point level data collected as part of the Public Land Survey was aggregated to an 8 x 8 km grid cell (Great Lakes St Lawrence Albers projection: epsg:3175). Only the first two reported trees at each corner point were used, no line or meander trees were selected due to the potential for surveyor bias in species selection.  The sample points represent a temporal range from approximately 1830 - 1904, running from the southeast to the northwest, largely prior to EuroAmerican settlement.  More detailed information is reported in Goring et al.
+
+For eastern records that formed part of the earlier Town Proprietor Surveys data was aggregated to polygons representing the historical townships.  This work is reported in Cogbill (2002) and elsewhere.
+
+Statistical Model:
+-----------------------------------------
+The mean and standard deviations reported here, and obtained represents statistics obtained from the posterior draw of a Conditional Autoregressive Model, detailed in Paciorek et al.
+
+Data description:
+-----------------------------------------
+The data here is presented by taxon.  
+
+Raster files include both the mean and standard deviation of the posterior draws as part of a GeoTIFF raster stack with projection information embedded within the raster (proj4 - epsg:3175).  
+
+The CSV downloads include columns for x and y coordinates, taxon (repeating within each download), the mean and sd of the proportional composition and the projection.  The projection is reported only in the first row, and is the Great Lakes St Lawrence Albers (epsg:3175) for all downloaded files.
