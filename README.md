@@ -7,6 +7,9 @@ This repository is the source code for interactive maps of PLS tree composition 
 **[Shiny Presettlement Vegetation](gandalf.berkeley.edu:3838/paciorek/setVegComp/)**
 
 ###Development
+
+*Development by any contributor is welcome, but we ask that you follow the [Code of Conduct](code_of_conduct.md) for this project.*
+
 + [Simon Goring](http://github.com/SimonGoring) University of Wisconsin
 + Chris Paciorek - University of California Berkely
 
@@ -26,5 +29,3 @@ The program, as installed, loads the mean posterior output from [Paciorek *et al
 Once the repo is cloned on your desktop and the required packages are installed (`shiny`, `ggplot2`, `gridExtra`, `RColorBrewer`), the app can be run from the file `RunShinyApp.R`.
 
 `Shiny-App` is the folder where the raw code lives.  Critically, `ui.R` and `server.R` are the files that actually run the program.  `load_ncdf.R` is a pre-processing script that loads the `ncdf` posteriors from Paciorek *et al*. and saves them as a long `data.frame` in `Data\all_taxa.RDS`.
-
-Shapefiles for Canada and the US are in `Data` as well.  There are older files in `ExtraFiles` and elsewhere that need to be cleaned up.  Shapefiles should all be converted to native R format files for faster loading.
