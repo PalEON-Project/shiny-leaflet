@@ -13,15 +13,30 @@ boundlist <- list(map1 = NA,
                   map2 = NA)
 
 #  This truncates the data values to limits `lim`, that will come from the user:
-thresh <- function(data, lim) {
-    if(class(data) == 'raster'){
+thresh <- function(data, lim, disc = FALSE) {
+    if(class(data) == 'raster' | class(data) == 'RasterLayer'){
       data.vals <- getValues(data)
-      data.vals[data.vals > max(lim)] <- max(lim)
+      data.vals[data.vals > max(lim)] <- max(lim) - 0.000001
       data.vals[data.vals < min(lim)] <- NA
+      
+      if(disc == TRUE){
+        # This discretizes the data into a set of bins.
+        new.vals <- pretty(data.vals)[findInterval(data.vals, pretty(data.vals)) + 1]
+        new.vals[data.vals == 0] <- 0
+        data.vals <- new.vals
+      }
+      
       data <- setValues(data, data.vals)
     } else {
-      data[data > max(lim)] <- max(lim)
+      data[data > max(lim)] <- max(lim) - 0.000001
       data[data < min(lim)] <- NA
+      
+      if(disc == TRUE){
+        new.vals <- pretty(data)[findInterval(data, pretty(data)) + 1]
+        new.vals[data == 0] <- 0
+        data <- new.vals
+      }
+      
     }
   
     return(data)
@@ -36,7 +51,7 @@ shinyServer(function(input,output){
     # 1. extract the taxon specific information
     # 2. Put the data into a raster for display with leaflet
     # 3. Clip the upper values to the user defined upper limit (with `thresh`).
-    # 4. Convert to a continuous scale (if desired)
+    # 4. Convert to a discrete scale (if desired)
     
     sub <- subset(all_taxa, taxon == input$taxon1)
     
@@ -45,18 +60,22 @@ shinyServer(function(input,output){
     sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
                          crs="+init=epsg:4326", resolution = 0.0833333)
     
+    # We are going to have:
+    #  1. the raw values (sds & mean)
+    #  2. the clipped, continuous values (sdsCont & meanCont)
+    #  3. the clipped, discrete values   (sdsDisc & meanDisc)
+    
     output$sds  <- setValues(sub_raster, unlist(sub$sds))
     output$mean <- setValues(sub_raster, unlist(sub$means))
     
-    output$meansCut <- thresh(output$mean, input$zlimit)
-    output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
+    output$sdsCont  <- thresh(output$sds, input$zlimit_sd)
+    output$meanCont <- thresh(output$mean, input$zlimit)
     
-    output$sdsCut[is.na(output$meansCut)] <- NA
+    output$meanDisc <- thresh(output$mean, input$zlimit, disc = TRUE)
+    output$sdsDisc  <- thresh(output$sds, input$zlimit_sd, disc = TRUE)
     
-    if(!input$continuous) {
-        output$meansDiscrete <- cut(output$meansCut, breaks = pretty(input$zlimit), include.lowest = TRUE)
-        output$sdsDiscrete <- cut(output$sdsCut, breaks = pretty(input$zlimit), include.lowest = TRUE)
-    }
+    output$sdsDisc[is.na(output$meanDisc)] <- NA
+    output$sdsCont[is.na(output$meanCont)] <- NA
     
     output
     
@@ -67,7 +86,7 @@ shinyServer(function(input,output){
     # 1. extract the taxon specific information
     # 2. Put the data into a raster for display with leaflet
     # 3. Clip the upper values to the user defined upper limit (with `thresh`).
-    # 4. Convert to a continuous scale (if desired)
+    # 4. Convert to a discrete scale (if desired)
     
     sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
                          crs="+init=epsg:4326", resolution = 0.0833333)
@@ -76,16 +95,23 @@ shinyServer(function(input,output){
     
     output <- list()
     
+    # We are going to have:
+    #  1. the raw values (sds & mean)
+    #  2. the clipped, continuous values (sdsCont & meanCont)
+    #  3. the clipped, discrete values   (sdsDisc & meanDisc)
+    
     output$sds  <- setValues(sub_raster, unlist(sub$sds))
     output$mean <- setValues(sub_raster, unlist(sub$means))
     
-    output$meansCut <- thresh(output$mean, input$zlimit)
-    output$sdsCut   <- thresh(output$sds, input$zlimit_sd)
+    output$sdsCont  <- thresh(output$sds, input$zlimit_sd)
+    output$meanCont <- thresh(output$mean, input$zlimit)
     
-    if(!input$continuous) {
-      output$meansDiscrete <- cut(output$meansCut, breaks = breaks, include.lowest = TRUE)
-      output$sdsDiscrete <- cut(output$sdsCut, breaks = breaks, include.lowest = TRUE)
-    }
+    output$meanDisc <- thresh(output$mean, input$zlimit, disc = TRUE)
+    output$sdsDisc  <- thresh(output$sds, input$zlimit_sd, disc = TRUE)
+    
+    output$sdsDisc[is.na(output$meanDisc)] <- NA
+    output$sdsCont[is.na(output$meanCont)] <- NA
+
     output
 
   })
@@ -109,31 +135,40 @@ shinyServer(function(input,output){
   
   # Plotting out the upper panel:
   output$MapPlot1 <- renderLeaflet({
-    
     # Renders the upper plot.
 
-    if(!input$sd_box_1){
-      # If a species is selected, but its SD is not chosen for display:
-      plotvals <- dataset1()$meansCut
-      title <- paste0("Proportion\n", input$taxon1)
+    if(input$continuous == TRUE) {
+      if(input$sd_box_1 == TRUE) {
+        # Is it the standard deviation or the proportions?
+        plotvals <- dataset1()$sdsCont
+        title <- paste0("St. Dev.\n", input$taxon1)
+      } else {
+        plotvals <- dataset1()$meanCont
+        title <- paste0("Proportion\n", input$taxon1)
+      }
       
-      # Colors are pulled from the range of the input data.
+      ranger <- range(getValues(plotvals), na.rm=TRUE)
+      ranger[2] <- ranger[2] + 0.001
+      
+      # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = input$rampPalette,
-                               domain = getValues(dataset1()$meansCut),
-                               na.color=NA)
-      
+                             domain = range(getValues(plotvals), na.rm=TRUE),
+                             na.color=NA)
     } else {
+      if(input$sd_box_1 == TRUE) {
+        # Is it the standard deviation or the proportions?
+        plotvals <- dataset1()$sdsDisc
+        title <- paste0("St. Dev.\n", input$taxon1)
+      } else {
+        plotvals <- dataset1()$meanDisc
+        title <- paste0("Proportion\n", input$taxon1)
+      }
       
-      #  If the sd box is checked:
-      plotvals <- dataset1()$sdsCut
-      title <- paste0("St. Dev\n", input$taxon1)
-      
-      palette <- colorNumeric(palette = input$sdPalette,
-                               domain = getValues(dataset1()$sdsCut),
-                               na.color=NA)
-      
+      palette <- colorFactor(palette = input$rampPalette,
+                             domain = levels(factor(getValues(plotvals))),
+                             na.color=NA)
     }
-    
+
     #  Laying out the map (without pipe notation):
     map <- addProviderTiles(leaflet(), 
                             input$baseTile)
@@ -150,35 +185,45 @@ shinyServer(function(input,output){
     }
     
     map <- addLegend(map, "bottomright", pal = palette, 
-                     values = values(plotvals),
-                     title = title,
-                     labFormat = labelFormat(),
-                     opacity = 1)
-    
+                   values = values(plotvals),
+                   title = title,
+                   labFormat = labelFormat(),
+                   opacity = 1)
+  
+      
     setView(map, lat = 43, lng = -81, zoom = 5)
     })
   
   # Plotting out the lower panel:
   output$MapPlot2 <- renderLeaflet({
     
-    if(!input$sd_box_2){
-      # As above. If a species is selected, but its SD is not chosen for display:
-      plotvals <- dataset2()$meansCut
-      title <- paste0("Propoportion\n",
-                      input$taxon2)
-      # Colors are pulled from the range of 
+    if(input$continuous == TRUE) {
+      if(input$sd_box_2 == TRUE) {
+        # Is it the standard deviation or the proportions?
+        plotvals <- dataset2()$sdsCont
+        title <- paste0("St. Dev.\n", input$taxon1)
+      } else {
+        plotvals <- dataset2()$meanCont
+        title <- paste0("Proportion\n", input$taxon1)
+      }
+      
+      # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = input$rampPalette,
-                              domain = getValues(dataset2()$meansCut),
+                              domain = getValues(plotvals),
                               na.color=NA)
     } else {
+      if(input$sd_box_2 == TRUE) {
+        # Is it the standard deviation or the proportions?
+        plotvals <- dataset2()$sdsDisc
+        title <- paste0("St. Dev.\n", input$taxon1)
+      } else {
+        plotvals <- dataset2()$meanDisc
+        title <- paste0("Proportion\n", input$taxon1)
+      }
       
-      plotvals <- dataset2()$sdsCut
-      title <- paste0("St. Dev\n",
-                      input$taxon2)
-      
-      palette <- colorNumeric(palette = input$sdPalette,
-                              domain = getValues(dataset2()$sdsCut),
-                              na.color=NA)
+      palette <- colorFactor(palette = input$rampPalette,
+                             domain = factor(getValues(plotvals)),
+                             na.color=NA)
     }
     
     #  Laying out the map (without pipe notation):

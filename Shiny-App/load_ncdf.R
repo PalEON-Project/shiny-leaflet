@@ -1,3 +1,6 @@
+#  This is the core function that prepares data for fast(ish) loading in the shiny app.
+#  Written by: Simon Goring
+
 library(raster)
 library(ncdf4)
 
