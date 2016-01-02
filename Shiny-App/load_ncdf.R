@@ -3,6 +3,18 @@
 
 library(raster)
 library(ncdf4)
+library(rgdal)
+library(rgeos)
+
+admin <- readOGR('../../../Maps/ne_10m_admin_1_states_provinces.shp', 'ne_10m_admin_1_states_provinces')
+lakes <- readOGR('../../../Maps/NaturalEarth/ne_10m_lakes/ne_10m_lakes.shp', 'ne_10m_lakes')
+
+admin <- admin[admin@data$geonunit %in% c('Canada', 'United States of America'),]
+
+lakes_admin <- gIntersection(lakes, admin)
+
+admin <- spTransform(admin, CRS("+init=epsg:3175"))
+lakes_tr <- spTransform(lakes_admin, CRS("+init=epsg:3175"))
 
 domain <- nc_open('Shiny-App/Data/composition_v0.3.nc', write = FALSE)
 
@@ -37,6 +49,11 @@ taxon_to_df <- function(taxon){
   
   mean_rast <- rasterize(taxa_df, y = empty_ab, field = 'means', fun=mean, na.rm=TRUE)
   sd_rast <- rasterize(taxa_df, y = empty_ab, field = 'sds', fun=mean, na.rm=TRUE)
+  
+  # The default projection of leaflet is EPSG:3857.  We are going to re-project so that
+  #  we don't get any strange behaviour:
+  output_mean_rast <- projectRaster(mean_rast, crs = "+init=epsg:3857")
+  output_sd_rast <- projectRaster(sd_rast, crs = "+init=epsg:3857")
 
   name_taxon <- gsub(' ', '_', taxon)
   name_taxon <- gsub('/', '_', name_taxon)
@@ -46,22 +63,31 @@ taxon_to_df <- function(taxon){
   df.output <- data.frame(xyFromCell(mean_rast, 1:ncell(mean_rast)),
                           taxon = taxon,
                           mean = getValues(mean_rast),
-                          sd   = getValues(mean_rast),
-                          proj = c(proj4string(mean_rast), rep(NA,ncell(mean_rast)-1)))
+                          sd   = getValues(mean_rast))
   
-  write.csv(df.output, file = paste0('Shiny-App/data/csvs/',name_taxon,'.csv'))
-    
-  mean_ll <- projectRaster(mean_rast, empty_ll)
-  sd_ll   <- projectRaster(sd_rast,   empty_ll)
+  write.csv(df.output, file = paste0('Shiny-App/data/csvs/',name_taxon,'.csv'),
+            quote = FALSE,
+            row.names = FALSE)
   
-  taxa_df <- data.frame(xyFromCell(mean_ll, 1:ncell(mean_ll)),
+  pdf(file = paste0('Shiny-App/data/pdfs/', name_taxon,'.pdf'), 
+      title = "PalEON Pre-Settlement Vegetation of the Northeastern United States - Paciorek et al (2015)",
+      paper = 'letter',
+      compress = FALSE)
+    plot(mean_rast,
+         main = paste0("Proportion of ", name_taxon," in Presettlement Vegetation"))
+    plot(lakes_tr, add = TRUE, col = "lightblue", border = "blue")
+    plot(admin, add = TRUE)
+  dev.off()
+  
+  taxa_df <- data.frame(xyFromCell(output_mean_rast, 1:ncell(output_mean_rast)),
                         taxon = taxon,
-                        means = getValues(mean_ll),
-                        sds   = getValues(sd_ll))
- taxa_df
-  cat('done', taxon,'\n')
+                        means = getValues(output_mean_rast),
+                        sds   = getValues(output_mean_rast))
+ 
+ cat('done', taxon,'\n')
+ return(taxa_df)
 }
-lapply(taxa, taxon_to_df)
-all_taxa <- do.call(rbind.data.frame,lapply(taxa, taxon_to_df))
 
-saveRDS(object = all_taxa, file = 'Data/all_taxa_ll.RDS')
+all_taxa <- do.call(rbind.data.frame, lapply(taxa, taxon_to_df))
+
+saveRDS(object = all_taxa, file = 'Shiny-App/data/all_taxa_wm.RDS')

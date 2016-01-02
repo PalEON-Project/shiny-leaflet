@@ -1,10 +1,32 @@
 READ ME
 -----------------------------------------
-This work represents intellectuals contribution by Christopher Paciorek and Simon Goring, and the PalEON Team.  This work is published as:
+This work represents intellectual contributions by Christopher Paciorek, Simon Goring, and the PalEON Team.  This work is published as:
 
+Goring, S. J., D. J. Mladenoff, S. Cogbill Charles V Record, C. J. Paciorek, S. T. Jackson, M. C. Dietze, A. Dawson, J. H. Matthes, J. S. McLachlan, J. W. Williams. accepted. Changes in forest composition, stem density, and biomass from the settlement era (1800s) to present in the upper midwestern United States. PLoS One. doi: http://dx.doi.org/10.1101/026575
+
+Paciorek, C.J., S.J. Goring, A.L. Thurman, C.V. Cogbill, J.W. Williams, D.J. Mladenoff, J.A. Peters, J. Zhu, and J.S. McLachlan. accepted Statistically-estimated tree composition for the northeastern United States at the time of Euro-American settlement. PLoS One. http://arxiv.org/abs/1508.07509
+
+The Shiny site is hosted by UC-Berkeley, and the code is available under the MIT License at http://www.github.com/Paleon-Project/shiny-leaflet and http://www.github.com/Paleon-Project/shiny-leaflet.
+
+Methods:
+-----------------------------------------
+Details on the tree composition data from the Public Land Survey and Town Proprietor Surveys and processing of that data are provided in Goring et al. Details on the statistical modeling used to estimate composition with uncertainty on all grid cells in the domain are provided in Paciorek et al. The quantities plotted in the Shiny app and provided via the download option are posterior means and posterior standard deviations produced by the statistical modeling. Individual posterior draws that can be used to summarize the posterior can be obtained as described in Paciorek et al. The input data used in the statistical modeling can be obtained as described in Goring et al. and Paciorek et al. 
+
+Data description:
+-----------------------------------------
+The data here are presented by taxon. Taxa represent groupings of species based on the original survey data as described in Paciorek et al. and Goring et al.  Supplement 2 of Goring et al. provides a full description of the taxonomic groupings used in this analysis.
+
+All data is provided in a Great Lakes St Lawrence Albers projection.  The projection is identified as EPSG:3175, or as the proj4 string: “+proj=aea +lat_1=42.122774 +lat_2=49.01518 +lat_0=45.568977 +lon_0=-83.248627 +x_0=1000000 +y_0=1000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs”  Full details on the projection are available at SpatialReference.org: http://spatialreference.org/ref/epsg/nad83-great-lakes-and-st-lawrence-albers/
+
+Raster files include both the mean and standard deviation of the posterior draws as part of a GeoTIFF raster stack with projection information embedded within the raster.
+
+The CSV files include columns for x and y coordinates, taxon (repeating within each download),the mean and sd of the posterior draws and the projection.  The projection is reported only in the first row, and is the Great Lakes St Lawrence Albers (epsg:3175) for all downloaded files.
+
+BibTex Citations
+----------------------------------------------
 @Article{paciorek2015comp,
-  Title                    = {A multivariate statistical model for estimating uncertainty from historical forest composition},
-  Author                   = {Paciorek, Christopher J and Thurman, Andrew and Goring, Simon and Dawson, Andria and others},
+  Title                    = {Statistically-estimated tree composition for the northeastern United States at the time of Euro-American settlement},
+  Author                   = {C.J. Paciorek and S.J. Goring and A.L. Thurman and C.V. Cogbill and J.W. Williams and D.J. Mladenoff and J.A. Peters and J. Zhu and J.S. McLachlan},
   Journal                  = {PLoS One},
   Year                     = {in revision},
   doi                      = {http://arxiv.org/abs/1508.07509}
@@ -18,26 +40,6 @@ This work represents intellectuals contribution by Christopher Paciorek and Simo
   doi                      = {http://dx.doi.org/10.1101/026575}
 }
 
-The Shiny site is hosted by UC-Berekeley, and the code is available under an MIT License at:
-
-http://www.github.com/SimonGoring/shiny
-
-The PalEON Data Agreement is available at http.
-
-Methods:
------------------------------------------
-Primary survey data was obtained from a number of data collection efforts across the northeastern United States (references in Paciorek et al., and Goring et al.).  Point level data collected as part of the Public Land Survey was aggregated to an 8 x 8 km grid cell (Great Lakes St Lawrence Albers projection: epsg:3175). Only the first two reported trees at each corner point were used, no line or meander trees were selected due to the potential for surveyor bias in species selection.  The sample points represent a temporal range from approximately 1830 - 1904, running from the southeast to the northwest, largely prior to EuroAmerican settlement.  More detailed information is reported in Goring et al.
-
-For eastern records that formed part of the earlier Town Proprietor Surveys data was aggregated to polygons representing the historical townships.  This work is reported in Cogbill (2002) and elsewhere.
-
-Statistical Model:
------------------------------------------
-The mean and standard deviations reported here, and obtained represents statistics obtained from the posterior draw of a Conditional Autoregressive Model, detailed in Paciorek et al.
-
-Data description:
------------------------------------------
-The data here is presented by taxon.  
-
-Raster files include both the mean and standard deviation of the posterior draws as part of a GeoTIFF raster stack with projection information embedded within the raster (proj4 - epsg:3175).  
-
-The CSV downloads include columns for x and y coordinates, taxon (repeating within each download), the mean and sd of the proportional composition and the projection.  The projection is reported only in the first row, and is the Great Lakes St Lawrence Albers (epsg:3175) for all downloaded files.
+Acknowledgements
+----------------------------------------------
+This material is based upon work carried out by the PalEON Project (paleonproject.org) with support from the National Science Foundation MacroSystems Biology program under grant nos. DEB-1065656, 1241868, 1241874,and 1065702. This work is the result of contributions from a large number of individuals over two centuries, both in the primary data collection & in the digitization, analysis and publication of the cited papers.

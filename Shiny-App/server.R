@@ -7,7 +7,7 @@ library(leaflet)
 library(raster)
 
 #  Load the taxon data for all taxa:
-all_taxa <- readRDS('Data/all_taxa_ll.RDS')
+all_taxa <- readRDS('data/all_taxa_wm.RDS')
 
 boundlist <- list(map1 = NA,
                   map2 = NA)
@@ -57,9 +57,10 @@ shinyServer(function(input,output){
     
     output <- list()
     
-    sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
-                         crs="+init=epsg:4326", resolution = 0.0833333)
-    
+    # Raster for leaflet's pseudo-web Mercator:
+    sub_raster <- raster(xmn=-10965655,xmx=-7236655,
+                         ymn=4253944,ymx=6508944,
+                         crs="+init=epsg:3857", resolution = 11000)
     # We are going to have:
     #  1. the raw values (sds & mean)
     #  2. the clipped, continuous values (sdsCont & meanCont)
@@ -88,8 +89,9 @@ shinyServer(function(input,output){
     # 3. Clip the upper values to the user defined upper limit (with `thresh`).
     # 4. Convert to a discrete scale (if desired)
     
-    sub_raster <- raster(xmn=-98.6,xmx=-66.1,ymn=36.5,ymx=49.75,
-                         crs="+init=epsg:4326", resolution = 0.0833333)
+    sub_raster <- raster(xmn=-10965655,xmx=-7236655,
+                         ymn=4253944,ymx=6508944,
+                         crs="+init=epsg:3857", resolution = 11000)
     
     sub <- subset(all_taxa, taxon == input$taxon2)
     
@@ -141,9 +143,11 @@ shinyServer(function(input,output){
       if(input$sd_box_1 == TRUE) {
         # Is it the standard deviation or the proportions?
         plotvals <- dataset1()$sdsCont
+        palette_in <- input$sdPalette
         title <- paste0("St. Dev.\n", input$taxon1)
       } else {
         plotvals <- dataset1()$meanCont
+        palette_in <- input$rampPalette
         title <- paste0("Proportion\n", input$taxon1)
       }
       
@@ -151,16 +155,18 @@ shinyServer(function(input,output){
       ranger[2] <- ranger[2] + 0.001
       
       # Either way, we use a numeric palette:
-      palette <- colorNumeric(palette = input$rampPalette,
-                             domain = range(getValues(plotvals), na.rm=TRUE),
+      palette <- colorNumeric(palette = palette_in,
+                             domain = ranger,
                              na.color=NA)
     } else {
       if(input$sd_box_1 == TRUE) {
         # Is it the standard deviation or the proportions?
         plotvals <- dataset1()$sdsDisc
+        palette_in <- input$sdPalette
         title <- paste0("St. Dev.\n", input$taxon1)
       } else {
         plotvals <- dataset1()$meanDisc
+        palette_in <- input$rampPalette
         title <- paste0("Proportion\n", input$taxon1)
       }
       
@@ -177,7 +183,8 @@ shinyServer(function(input,output){
                           layerId = "UpperPlot",
                           plotvals, 
                           opacity = input$opacity/100,
-                          colors = palette)
+                          colors = palette,
+                          project = FALSE)
     
     if(input$labelTile){
       #  This adds the labels above the raster layer:
@@ -191,7 +198,7 @@ shinyServer(function(input,output){
                    opacity = 1)
   
       
-    setView(map, lat = 43, lng = -81, zoom = 5)
+    setView(map, lat = 43, lng = -81, zoom = 4)
     })
   
   # Plotting out the lower panel:
@@ -234,7 +241,8 @@ shinyServer(function(input,output){
                           layerId = "LowerPlot",
                           plotvals, 
                           opacity = input$opacity/100,
-                          colors = palette)
+                          colors = palette,
+                          project = FALSE)
     
     if(input$labelTile){
       map <- addProviderTiles(map, "Stamen.TonerLabels")
@@ -246,7 +254,7 @@ shinyServer(function(input,output){
                       labFormat = labelFormat(),
                       opacity = 1)
     
-    setView(map, lat = 43, lng = -81, zoom = 5)
+    setView(map, lat = 43, lng = -81, zoom = 4)
   })
   
   observe({
@@ -254,6 +262,4 @@ shinyServer(function(input,output){
       setView(lng = input$MapPlot1_center$lng,
               lat = input$MapPlot1_center$lat,
               zoom = input$MapPlot1_zoom) })
-  
-  
 })
