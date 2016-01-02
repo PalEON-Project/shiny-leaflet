@@ -17,9 +17,9 @@ color_palettes <- c("Blues", "GnBu",
 shinyUI(fluidPage(
   
   includeCSS("www/bootstrap.css"),
-  
   # Application title:
-  titlePanel("Settlement-era Tree Composition"),
+  titlePanel(title = "Settlement-era Tree Composition",
+             windowTitle = "Settlement-era Tree Composition"),
   
   # The first row has two columns, one with overall map options,
   # The other with selections
