@@ -1,6 +1,6 @@
 # ui.R
 library(shiny)
-library(shinydashboard)
+#library(shinydashboard)
 library(leaflet)
 
 all_taxa <- readRDS('data/all_taxa_wm.RDS')
