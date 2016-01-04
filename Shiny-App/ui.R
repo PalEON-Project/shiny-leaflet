@@ -1,8 +1,9 @@
 # ui.R
 library(shiny)
+library(shinydashboard)
 library(leaflet)
 
-all_taxa <- readRDS('Data/all_taxa_wm.RDS')
+all_taxa <- readRDS('data/all_taxa_wm.RDS')
 
 maptypes <- c("MapQuestOpen.Aerial",
                "Stamen.TerrainBackground",
@@ -13,6 +14,8 @@ color_palettes <- c("Blues", "GnBu",
                     "Greys", "OrRd",
                     "PuBuGn", "Reds",
                     "YlGnBu")
+
+#header <- dashboardHeader(title = "PalEON Vegetation")
 
 shinyUI(fluidPage(
   
