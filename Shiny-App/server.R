@@ -36,7 +36,6 @@ thresh <- function(data, lim, disc = FALSE) {
         new.vals[data == 0] <- 0
         data <- new.vals
       }
-      
     }
   
     return(data)
@@ -205,30 +204,36 @@ shinyServer(function(input,output){
   output$MapPlot2 <- renderLeaflet({
     
     if(input$continuous == TRUE) {
+      # If this is all plotted on a continuous scale:
       if(input$sd_box_2 == TRUE) {
         # Is it the standard deviation or the proportions?
         plotvals <- dataset2()$sdsCont
-        title <- paste0("St. Dev.\n", input$taxon1)
+        palette_in <- input$sdPalette
+        title <- paste0("St. Dev.\n", input$taxon2)
       } else {
         plotvals <- dataset2()$meanCont
-        title <- paste0("Proportion\n", input$taxon1)
+        palette_in <- input$rampPalette
+        title <- paste0("Proportion\n", input$taxon2)
       }
       
       # Either way, we use a numeric palette:
-      palette <- colorNumeric(palette = input$rampPalette,
+      palette <- colorNumeric(palette = palette_in,
                               domain = getValues(plotvals),
                               na.color=NA)
     } else {
+      # If this is plotted on a discrete scale.
       if(input$sd_box_2 == TRUE) {
         # Is it the standard deviation or the proportions?
         plotvals <- dataset2()$sdsDisc
-        title <- paste0("St. Dev.\n", input$taxon1)
+        title <- paste0("St. Dev.\n", input$taxon2)
+        palette_in <- input$sdPalette
       } else {
         plotvals <- dataset2()$meanDisc
-        title <- paste0("Proportion\n", input$taxon1)
+        title <- paste0("Proportion\n", input$taxon2)
+        palette_in <- input$rampPalette
       }
       
-      palette <- colorFactor(palette = input$rampPalette,
+      palette <- colorFactor(palette = palette_in,
                              domain = factor(getValues(plotvals)),
                              na.color=NA)
     }
