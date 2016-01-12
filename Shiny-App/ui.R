@@ -1,6 +1,6 @@
 # ui.R
 library(shiny)
-#library(shinydashboard)
+library(shinydashboard)
 library(leaflet)
 
 all_taxa <- readRDS('data/all_taxa_wm.RDS')
@@ -15,72 +15,98 @@ color_palettes <- c("Blues", "GnBu",
                     "PuBuGn", "Reds",
                     "YlGnBu")
 
-#header <- dashboardHeader(title = "PalEON Vegetation")
+body <- dashboardBody(
+  div(class="outer",
+  tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 250px; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
+  leafletOutput("MapPlot1", height = '50%'),
+  leafletOutput("MapPlot2", height = '50%'))
+)
 
-shinyUI(fluidPage(
+header <- dashboardHeader(title = "PalEON Vegetation",
+                          titleWidth=250)
+
+sidebar <- dashboardSidebar(
+  width = 250,
+  tags$head(
+    tags$style(HTML(".sidebar { height: 95vh; width: 250px; overflow-y: auto;}"))
+    ),
   
-  includeCSS("www/bootstrap.css"),
-  # Application title:
-  titlePanel(title = "Settlement-era Tree Composition",
-             windowTitle = "Settlement-era Tree Composition"),
+  HTML("<br>"),
   
-  # The first row has two columns, one with overall map options,
-  # The other with selections
-  mainPanel(fluidRow(
-      column(3,
-           h4("Map Controls"),
-           tags$div(title="Choose the background layer to display.",
-                    selectInput('baseTile', "Map Tileset",
-                          maptypes)),
-           tags$div(title="Do you want to add city/country labels to the map?",
-                    checkboxInput("labelTile", "Add Map Labels")),
-           tags$div(title="Color palette for the means of the posterior draws for the display taxa.",
-                    selectInput("rampPalette", "Proportion Palette",
-                       color_palettes)),
-           tags$div(title="Color palette for displaying the standard deviation of the posterior draws.",
-                    selectInput("sdPalette", "St. Dev. Palette",
-                       color_palettes)),
-           tags$div(title="Display limits for the proportional pre-settlement composition data.",
-                    sliderInput(inputId = "zlimit",
-                                label = "Prop. Display Limits:",
-                                min = 0, max = 1, value = c(0,.5), step = 0.01)
-           ),
-           tags$div(title="Display limits for the standard deviation of the posterior from which the mean is calculated.",
-                    sliderInput(inputId = "zlimit_sd",
-                                label = "Uncertainty Limits:",
-                                min = 0.0, max = .25, value = c(0,.25), step = 0.01)
-           ),
-           tags$div(title="Choose the level of opacity for the display data.",
-                    sliderInput(inputId = "opacity",
-                       label = "Opacity (%):",
-                       min = 0.0, max = 100, value = 50, step = 5)),
-           tags$div(title="Would you prefer a continuous (default) or discrete scale (7 levels) for mapping.",
-                    checkboxInput(inputId = "continuous",
-                         label = strong("Continuous scale"),
-                         value = TRUE))),
-       column(2,
-           wellPanel(h4("Panel Display"),
-                     p(tags$div(title="Select the taxon for display for the upper panel.",
-                                selectInput("taxon1", "Taxon One", 
-                                   unique(as.character(all_taxa$taxon)))),
-                       tags$div(title="Would you like to see the posterior mean (unchecked) or the standard deviation of the posterior draws?",
-                                checkboxInput("sd_box_1", "St. Dev"))),
-                     p(tags$div(title="Select the taxon for display for the lower panel.",
-                                selectInput("taxon2", "Taxon Two", 
-                                   unique(as.character(all_taxa$taxon))),
-                                tags$div(title="Would you like to see the posterior mean (unchecked) or the standard deviation of the posterior draws?",
-                                         checkboxInput("sd_box_2", "St. Dev"))))),
-           wellPanel(h4("Download"),
-                     p(tags$div(title="Choose to download the data from the upper or lower panel (both the mean & SD will be downloaded)",
-                                selectInput("dlPanel", "Panel", 
-                                   c('One', 'Two'))),
-                       tags$div(title="Select the file type for download (compressed in a zipped file).",
-                                selectInput("FileType", "File Type", 
-                                            c('raster', 'csv', 'pdf'))),
-                       tags$div(title="Click this button to download the data you want.",
-                                downloadButton('downloadData', 'Download'))))),
-    column(7,
-           leafletOutput("MapPlot1"),
-           leafletOutput("MapPlot2"))
-    ))
-  ))
+  box(title = 'Species Display',
+      selectInput("taxon1", "Taxon One", 
+                  unique(as.character(all_taxa$taxon))),
+      checkboxInput("sd_box_1", "St. Dev"),
+      selectInput("taxon2", "Taxon Two", 
+                  unique(as.character(all_taxa$taxon))),
+      checkboxInput("sd_box_2", "St. Dev"),
+      collapsible = TRUE, 
+      collapsed = FALSE,
+      width = NULL,
+      color='blue',
+      solidHeader = TRUE,
+      background = 'light-blue'),
+  
+  box(title="Map Backgrounds",
+      icon = 'map-o',
+      selectInput('baseTile', "Map Tileset",
+                         maptypes),
+      checkboxInput("labelTile", "Add Map Labels"), 
+      collapsible = TRUE, 
+      collapsed = TRUE,
+      width = NULL,
+      solidHeader = TRUE,
+      color='blue',
+      background = 'light-blue'),
+    
+  box(title = "Plot Options",
+      tags$head(
+        tags$style(HTML(".irs-bar { height: 8px; top: 25px; border-top: 1px solid #428bca; 
+                                    border-bottom: 1px solid #428bca; background: #ffffff; } 
+                        .irs-bar-edge { height: 8px; top: 25px; width: 14px; 
+                                        border: 1px solid #428bca; border-right: 0; 
+                                        background: #ffffff; border-radius: 16px 0 0 16px; 
+                                        -moz-border-radius: 16px 0 0 16px; }
+                        .irs-grid-text { position: absolute; bottom: 0; left: 0; 
+                                         white-space: nowrap; text-align: center; font-size: 9px; 
+                                         line-height: 9px; padding: 0 3px; color: #000; }"))),
+      sliderInput(inputId = "zlimit",
+                  label = "Prop. Display Limits:",
+                  min = 0, max = 1, value = c(0,.5), step = 0.01),
+      selectInput("rampPalette", "Proportion Palette",
+                       color_palettes),
+      sliderInput(inputId = "zlimit_sd",
+                  label = "StDev. Display Limits:",
+                  min = 0, max = 1, value = c(0,.5), step = 0.01),
+      selectInput("sdPalette", "St. Dev. Palette",
+                           color_palettes),
+      sliderInput(inputId = "opacity",
+                           label = "Opacity (%):",
+                           min = 0.0, max = 100, value = 50, step = 5),
+      checkboxInput(inputId = "continuous",
+                             label = strong("Continuous scale"),
+                             value = TRUE),
+      collapsible = TRUE, 
+      collapsed = TRUE,
+      width = NULL,
+      solidHeader = TRUE,
+      color='blue',
+      background = 'light-blue'),
+    
+  box(title = 'Download',
+      selectInput("dlPanel", "Panel", 
+                       c('One', 'Two')),
+      selectInput("FileType", "File Type", 
+                           c('raster', 'csv', 'pdf')),
+      tags$style(type='text/css', "#Download { color:black;}"),
+      downloadButton('downloadData', 'Download'),
+      collapsible = TRUE, 
+      collapsed = TRUE,
+      width = NULL,
+      solidHeader = TRUE,
+      color='blue',
+      background = 'light-blue')
+)
+
+
+dashboardPage(header, sidebar, body)
