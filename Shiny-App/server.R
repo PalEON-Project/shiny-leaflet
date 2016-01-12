@@ -16,7 +16,7 @@ boundlist <- list(map1 = NA,
 thresh <- function(data, lim, disc = FALSE) {
     if(class(data) == 'raster' | class(data) == 'RasterLayer'){
       data.vals <- getValues(data)
-      data.vals[data.vals > max(lim)] <- max(lim) - 0.000001
+      data.vals[data.vals > max(lim)] <- max(lim)
       data.vals[data.vals < min(lim)] <- NA
       
       if(disc == TRUE){
@@ -28,7 +28,7 @@ thresh <- function(data, lim, disc = FALSE) {
       
       data <- setValues(data, data.vals)
     } else {
-      data[data > max(lim)] <- max(lim) - 0.000001
+      data[data > max(lim)] <- max(lim)
       data[data < min(lim)] <- NA
       
       if(disc == TRUE){
@@ -151,7 +151,13 @@ shinyServer(function(input,output){
       }
       
       ranger <- range(getValues(plotvals), na.rm=TRUE)
-      ranger[2] <- ranger[2] + 0.001
+      
+      if(input$sd_box_1 == TRUE){
+        ranger[2] <- max(ranger[2], input$zlimit_sd[2])
+      } else {
+        ranger[2] <- max(ranger[2], input$zlimit[2])
+      }
+      cat(ranger, 'Panel 1\n')
       
       # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = palette_in,
@@ -216,9 +222,17 @@ shinyServer(function(input,output){
         title <- paste0("Proportion\n", input$taxon2)
       }
       
-      # Either way, we use a numeric palette:
+      ranger <- range(getValues(plotvals), na.rm=TRUE)
+      
+      if(input$sd_box_2 == TRUE){
+        ranger[2] <- max(ranger[2], input$zlimit_sd[2])
+      } else {
+        ranger[2] <- max(ranger[2], input$zlimit[2])
+      }
+      cat(ranger, 'Panel 2\n')
+            # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = palette_in,
-                              domain = getValues(plotvals),
+                              domain = ranger,
                               na.color=NA)
     } else {
       # If this is plotted on a discrete scale.
