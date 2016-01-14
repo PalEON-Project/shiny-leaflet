@@ -63,7 +63,7 @@ taxon_to_df <- function(taxon){
   df.output <- data.frame(xyFromCell(mean_rast, 1:ncell(mean_rast)),
                           taxon = taxon,
                           mean = getValues(mean_rast),
-                          sd   = getValues(mean_rast))
+                          sd   = getValues(sd_rast))
   
   write.csv(df.output, file = paste0('Shiny-App/data/csvs/',name_taxon,'.csv'),
             quote = FALSE,
