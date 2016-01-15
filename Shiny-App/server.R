@@ -157,7 +157,6 @@ shinyServer(function(input,output){
       } else {
         ranger[2] <- max(ranger[2], input$zlimit[2])
       }
-      cat(ranger, 'Panel 1\n')
       
       # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = palette_in,
@@ -229,7 +228,7 @@ shinyServer(function(input,output){
       } else {
         ranger[2] <- max(ranger[2], input$zlimit[2])
       }
-      cat(ranger, 'Panel 2\n')
+
             # Either way, we use a numeric palette:
       palette <- colorNumeric(palette = palette_in,
                               domain = ranger,
@@ -276,9 +275,21 @@ shinyServer(function(input,output){
     setView(map, lat = 43, lng = -81, zoom = 4)
   })
   
+  runner <- 1
+  
   observe({
     leafletProxy("MapPlot2") %>%
       setView(lng = input$MapPlot1_center$lng,
               lat = input$MapPlot1_center$lat,
-              zoom = input$MapPlot1_zoom) })
+              zoom = input$MapPlot1_zoom)
+    })
+  
+#  Ideally I would observe both panels, but if I mess around
+#  too much I get stuck in an infinite loop of re-plotting.
+#
+#  observe({
+#    leafletProxy("MapPlot1") %>%
+#      setView(lng = input$MapPlot2_center$lng,
+#              lat = input$MapPlot2_center$lat,
+#              zoom = input$MapPlot2_zoom) })
 })
