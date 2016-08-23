@@ -5,10 +5,9 @@ library(leaflet)
 
 all_taxa <- readRDS('data/all_taxa_wm.RDS')
 
-maptypes <- c("MapQuestOpen.Aerial",
-               "Stamen.TerrainBackground",
-               "Esri.WorldImagery",
-               'OpenStreetMap')
+maptypes <- c("Esri.WorldImagery",
+              "Stamen.TerrainBackground",
+              "OpenStreetMap")
 
 color_palettes <- c("Blues", "GnBu",
                     "Greys", "OrRd",
