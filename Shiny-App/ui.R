@@ -15,14 +15,14 @@ color_palettes <- c("Blues", "GnBu",
                     "YlGnBu")
 
 body <- dashboardBody(
-  div(class="outer",
+  div(class = "outer",
   tags$style(type = "text/css", ".outer {position: fixed; top: 41px; left: 250px; right: 0; bottom: 0; overflow: hidden; padding: 0}"),
   leafletOutput("MapPlot1", height = '50%'),
   leafletOutput("MapPlot2", height = '50%'))
 )
 
 header <- dashboardHeader(title = "PalEON Vegetation",
-                          titleWidth=250)
+                          titleWidth = 250)
 
 sidebar <- dashboardSidebar(
   width = 250,
@@ -46,12 +46,12 @@ sidebar <- dashboardSidebar(
       collapsible = TRUE, 
       collapsed = FALSE,
       width = NULL,
-      color='blue',
+      color = 'blue',
       solidHeader = TRUE,
       background = 'light-blue'),
   
-  box(title="Map Backgrounds",
-      icon = 'map-o',
+  box(title = "Map Backgrounds",
+      icon  = 'map-o',
       tags$div(title = "Select the leaflet basemap to display.",
                selectInput('baseTile', "Map Tileset",
                          maptypes)),
@@ -61,7 +61,7 @@ sidebar <- dashboardSidebar(
       collapsed = TRUE,
       width = NULL,
       solidHeader = TRUE,
-      color='blue',
+      color = 'blue',
       background = 'light-blue'),
     
   box(title = "Plot Options",
@@ -99,7 +99,7 @@ sidebar <- dashboardSidebar(
       collapsed = TRUE,
       width = NULL,
       solidHeader = TRUE,
-      color='blue',
+      color = 'blue',
       background = 'light-blue'),
     
   box(title = 'Download',
@@ -109,14 +109,14 @@ sidebar <- dashboardSidebar(
       tags$div(title = "Select the download filetype.  PDF is image only.",
                selectInput("FileType", "File Type", 
                            c('raster', 'csv', 'pdf'))),
-      tags$style(type='text/css', "#btn { color:black;}"),
+      tags$style(type = 'text/css', "#btn { color:black;}"),
       tags$div(title = "Click to download the data. Button looks grey, but works :)",
-               downloadButton('downloadData', 'Download', class="color:#ffffff;")),
+               downloadButton('downloadData', 'Download', class = "color:#ffffff;")),
       collapsible = TRUE, 
       collapsed = TRUE,
       width = NULL,
       solidHeader = TRUE,
-      color='blue',
+      color = 'blue',
       background = 'light-blue')
 )
 
