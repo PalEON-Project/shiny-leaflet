@@ -3,14 +3,15 @@ Shiny
 
 This repository is the source code for interactive maps of PLS tree composition maps on the web using [Shiny](http://shiny.rstudio.com/).  You can access the live page here:
 
-**[Shiny Presettlement Vegetation - Leaflet](gandalf.berkeley.edu:3838/paciorek/setVegComp-leaflet/)**
-**[Shiny Presettlement Vegetation](gandalf.berkeley.edu:3838/paciorek/setVegComp/)**
+* [**Shiny Presettlement Vegetation - Leaflet**](http://gandalf.berkeley.edu:3838/paciorek/setVegComp-leaflet/)
+
+* [**Shiny Presettlement Vegetation - Static**](http://gandalf.berkeley.edu:3838/paciorek/setVegComp/)
 
 ###Development
 
 *Development by any contributor is welcome, but we ask that you follow the [Code of Conduct](code_of_conduct.md) for this project.*
 
-+ [Simon Goring](http://github.com/SimonGoring) University of Wisconsin
++ [Simon Goring](http://github.com/SimonGoring) - University of Wisconsin - Madison
 + Chris Paciorek - University of California Berkely
 
 ### Contributors
